@@ -8,7 +8,10 @@ __pycache__/
 
 # Runtime output
 *.csv
-!learning_material/**
+*.jsonl
+
+# Reference / recon session data (kept locally, not for distribution)
+reference_material/
 
 # Environment
 .env

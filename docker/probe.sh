@@ -1,4 +1,5 @@
 #!/bin/bash
+# Author: troodon7 (https://github.com/troodon7)
 # AnyDesk Probe — runs inside disposable Docker container
 # Starts Xvfb + AnyDesk in standalone mode (auto-connects to target),
 # parses trace log, outputs JSON.

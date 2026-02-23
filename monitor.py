@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Author: troodon7 (https://github.com/troodon7)
 """
 AnyDesk OSINT Monitor — Docker Probe Architecture
 
@@ -19,6 +20,7 @@ import subprocess
 import signal
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 
@@ -166,7 +168,7 @@ def setup():
 
     # CSV output path (always, useful for both modes)
     print()
-    config["output"] = prompt("CSV output file", "anydesk_monitor.csv")
+    config["output"] = prompt("CSV output file", str(Path.home() / "anydesk_monitor.csv"))
 
     config["image"] = "anydesk-probe"
 
@@ -237,6 +239,68 @@ def run_probe(aid, image_name, timeout):
         }
 
 
+
+def run_recon_probe(aid, image_name, recon_script, timeout=20):
+    """Run recon probe to extract OSINT on first online detection.
+
+    Waits 1.5s past initial connection to capture P2P negotiation data:
+    public IP, device fingerprints, relay info, and all LAN/VPN endpoints.
+    Returns a dict with the parsed fields.
+    """
+    if not recon_script.exists():
+        return {
+            "id": aid,
+            "status": "error",
+            "detail": f"recon_probe.sh not found: {recon_script}",
+        }
+    try:
+        result = subprocess.run(
+            [
+                "docker", "run", "--rm",
+                "--network=host",
+                "--security-opt", "apparmor=unconfined",
+                "-v", f"{recon_script}:/recon_probe.sh:ro",
+                "-e", f"TARGET_ID={aid}",
+                "-e", f"TIMEOUT={timeout}",
+                "--entrypoint", "/recon_probe.sh",
+                image_name,
+            ],
+            capture_output=True, text=True,
+            timeout=timeout + 30,
+        )
+        stdout = result.stdout.strip()
+        if not stdout:
+            return {"id": aid, "status": "error", "detail": "No output from recon probe"}
+        for line in reversed(stdout.splitlines()):
+            line = line.strip()
+            if line.startswith("{"):
+                try:
+                    return json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+        return {"id": aid, "status": "error", "detail": f"No JSON: {stdout[:200]}"}
+    except subprocess.TimeoutExpired:
+        return {"id": aid, "status": "error", "detail": "Recon probe timed out"}
+    except Exception as e:
+        return {"id": aid, "status": "error", "detail": str(e)}
+
+
+
+def cleanup_containers(image_name):
+    """Kill any probe containers still running for this image."""
+    try:
+        r = subprocess.run(
+            ["docker", "ps", "-q", "--filter", f"ancestor={image_name}"],
+            capture_output=True, text=True, timeout=10,
+        )
+        ids = [c for c in r.stdout.strip().splitlines() if c]
+        if ids:
+            subprocess.run(["docker", "kill"] + ids,
+                           capture_output=True, timeout=15)
+    except Exception:
+        pass
+
+
 # ── Main ─────────────────────────────────────────────────────────────────
 
 BANNER = """
@@ -290,6 +354,12 @@ def main():
     print("\n  ── Setup ──")
     config = setup()
 
+    # Recon setup
+    recon_done = set()
+    recon_script = Path(__file__).parent / "docker" / "recon_probe.sh"
+    csv_path = Path(config["output"]).expanduser()
+    recon_out = csv_path.parent / (csv_path.stem + "_recon.jsonl")
+
     # Step 3: Confirm and launch
     print(f"\n  ── Config ──")
     print(f"    Targets:  {', '.join(config['ids'])}")
@@ -325,6 +395,7 @@ def main():
     def handle_signal(sig, frame):
         nonlocal shutdown
         shutdown = True
+        cleanup_containers(image_name)
 
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)
@@ -344,6 +415,29 @@ def main():
                 # Always log to CSV
                 logger.log(aid, result)
 
+                # Auto-recon: run once on first online detection
+                if result.get("status") == "online" and aid not in recon_done:
+                    recon_done.add(aid)
+                    recon = run_recon_probe(aid, config["image"], recon_script)
+                    recon["timestamp"] = datetime.now().isoformat()
+                    with open(recon_out, "a") as rf:
+                        rf.write(json.dumps(recon) + "\n")
+                    ip = recon.get("public_ip", "?")
+                    fpr = recon.get("fpr_short", "?")
+                    candidates = recon.get("connection_candidates", [])
+                    recon_lines = [
+                        f"  [RECON] {aid}",
+                        f"    Public IP  : {ip}:{recon.get('public_port', '?')}",
+                        f"    Relay      : {recon.get('relay_id', '?')} ({recon.get('relay_ip', '?')})",
+                        f"    FPR        : {fpr}",
+                    ] + [f"    Endpoint   : {ep}" for ep in candidates]
+                    if display:
+                        for line in recon_lines:
+                            display.live.console.print(line)
+                    else:
+                        for line in recon_lines:
+                            print(line)
+
                 if display:
                     display.update(aid, result)
                     display.refresh()
@@ -357,6 +451,7 @@ def main():
                 waited += 1
 
     finally:
+        cleanup_containers(image_name)
         if display:
             display.stop()
             display.print_summary()
@@ -364,6 +459,8 @@ def main():
             print(f"\n  Stopped after {cycle} cycle(s).")
 
         print(f"  Results saved to: {config['output']}")
+        if recon_out.exists():
+            print(f"  Recon data   at: {recon_out}")
 
 
 if __name__ == "__main__":
