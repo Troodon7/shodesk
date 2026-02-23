@@ -201,6 +201,20 @@ Add your user to the docker group:
 sudo usermod -aG docker $USER && newgrp docker
 ```
 
+### Checking and removing the probe image
+
+The probe image persists on disk between runs — containers are destroyed after each probe but the image stays until you delete it. To check if it exists:
+```bash
+docker images anydesk-probe
+```
+
+To remove it from disk:
+```bash
+docker rmi anydesk-probe
+```
+
+The next run of `monitor.py` will rebuild it automatically (~3 minutes).
+
 ### Probe image not found after reboot
 
 Podman images in rootless mode may not persist across reboots. `monitor.py` detects this and auto-rebuilds. To rebuild manually:
