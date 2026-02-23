@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# Runtime output
+*.csv
+!learning_material/**
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE / tool settings
+.claude/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
