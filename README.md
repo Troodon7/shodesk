@@ -213,7 +213,7 @@ docker build -t anydesk-probe docker/
 AnyDesk may have updated its trace log format. Signs:
 - The `detail` field shows `No pattern (Ns). Log: ...` with unfamiliar log lines
 
-Update the `grep` patterns in `docker/probe.sh`, then force a clean image rebuild:
+Update the `grep` patterns in `docker/probe.sh` then force a clean image rebuild:
 ```bash
 docker rmi anydesk-probe
 docker build -t anydesk-probe docker/
@@ -243,33 +243,9 @@ anydesk_monitor/
 │   ├── dashboard.py            # Rich Live table display
 │   └── logger.py               # CSV logger + log-mode line printer
 ├── recon/
-│   ├── ip_scan.py              # Standalone OSINT scanner (on-demand recon)
-│   ├── capture.py              # Guided recon capture (requires local AnyDesk)
-│   └── analyze.py              # Scenario diff and pattern analyzer
+│   └── ip_scan.py              # Standalone OSINT scanner (on-demand recon)
 └── reference_material/         # Local only — not committed to repo
     └── recon_20260223_000129/  # Trace data from initial recon session
-```
-
----
-
-## Research
-
-### Recon Tools
-
-`recon/` contains scripts for re-deriving detection patterns if AnyDesk changes its trace format:
-
-**`capture.py`** — walks you through four test scenarios recording trace log lines, file changes, network connections, and process state for each. Requires AnyDesk installed locally.
-
-```bash
-cd recon && python3 capture.py
-```
-
-**`analyze.py`** — diffs captured scenarios to find log messages unique to each status:
-
-```bash
-python3 analyze.py ../reference_material/recon_YYYYMMDD_HHMMSS/
-python3 analyze.py ../reference_material/recon_YYYYMMDD_HHMMSS/ --verbose
-python3 analyze.py ../reference_material/recon_YYYYMMDD_HHMMSS/ -o report.txt
 ```
 
 ---
