@@ -12,6 +12,7 @@ Just run it:
 """
 
 import argparse
+import glob
 import json
 import os
 import re
@@ -22,6 +23,26 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
+try:
+    import readline
+    _HAS_READLINE = True
+except ImportError:
+    _HAS_READLINE = False
+
+
+def _path_completer(text, state):
+    """Tab-completion for file paths, honouring ~ expansion."""
+    expanded = os.path.expanduser(text)
+    matches = glob.glob(expanded + "*")
+    matches = [m + "/" if os.path.isdir(m) else m for m in matches]
+    if text.startswith("~"):
+        home = os.path.expanduser("~")
+        matches = ["~" + m[len(home):] if m.startswith(home) else m for m in matches]
+    try:
+        return matches[state]
+    except IndexError:
+        return None
 
 
 # ── Preflight ────────────────────────────────────────────────────────────
@@ -117,7 +138,13 @@ def setup():
     print("  Or enter a path to a .txt file (one ID per line)")
     print("  Example: 123456789,987654321  or  ~/targets.txt")
     while True:
+        if _HAS_READLINE:
+            readline.set_completer(_path_completer)
+            readline.set_completer_delims(" \t\n;")
+            readline.parse_and_bind("tab: complete")
         raw = prompt("Target ID(s) or file path")
+        if _HAS_READLINE:
+            readline.set_completer(None)
         raw_expanded = str(Path(raw).expanduser()) if raw else raw
         if raw and Path(raw_expanded).is_file():
             try:
