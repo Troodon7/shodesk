@@ -33,7 +33,7 @@ class Dashboard:
                 "status": "pending",
                 "remote_os": "",
                 "detail": "",
-                "recon": "",
+                "recon_data": None,
                 "elapsed_ms": 0,
                 "last_checked": None,
                 "last_online": None,
@@ -42,15 +42,34 @@ class Dashboard:
             }
 
     def set_recon(self, aid, recon):
-        """Store formatted recon data for display in the detail pane."""
-        lines = [
-            f"Public IP  : {recon.get('public_ip', '?')}:{recon.get('public_port', '?')}",
-            f"Relay      : {recon.get('relay_id', '?')} ({recon.get('relay_ip', '?')})",
-            f"FPR        : {recon.get('fpr_short', '?')}",
-        ]
-        for ep in recon.get("connection_candidates", []):
-            lines.append(f"Endpoint   : {ep}")
-        self.state[aid]["recon"] = "\n".join(lines)
+        """Store recon data dict for colored rendering in the detail pane."""
+        self.state[aid]["recon_data"] = recon
+
+    def _recon_text(self, recon_data):
+        """Build a colored Rich Text block from recon data dict."""
+        t = Text()
+        ip = recon_data.get("public_ip", "?")
+        port = recon_data.get("public_port", "?")
+        t.append("Public IP  : ")
+        t.append(ip, style="green")
+        t.append(":")
+        t.append(str(port), style="cyan")
+        relay_id = recon_data.get("relay_id", "?")
+        relay_ip = recon_data.get("relay_ip", "?")
+        t.append(f"\nRelay      : {relay_id} (")
+        t.append(relay_ip, style="green")
+        t.append(")")
+        t.append(f"\nFPR        : {recon_data.get('fpr_short', '?')}")
+        for ep in recon_data.get("connection_candidates", []):
+            t.append("\nEndpoint   : ")
+            last_colon = ep.rfind(":")
+            if last_colon != -1:
+                t.append(ep[:last_colon], style="green")
+                t.append(":")
+                t.append(ep[last_colon + 1:], style="cyan")
+            else:
+                t.append(ep, style="green")
+        return t
 
     def update(self, aid, result):
         """Update state for a target ID with a probe result dict."""
@@ -98,12 +117,13 @@ class Dashboard:
             if s["last_checked"]:
                 last_checked = s["last_checked"].strftime("%Y-%m-%d %H:%M:%S")
 
-            recon = s.get("recon", "")
-            probe_detail = s["detail"]
-            if recon:
-                cell_detail = recon + "\n" + "─" * 30 + "\n" + probe_detail
+            recon_data = s.get("recon_data")
+            if recon_data:
+                cell_detail = self._recon_text(recon_data)
+                cell_detail.append("\n" + "─" * 30 + "\n")
+                cell_detail.append(s["detail"])
             else:
-                cell_detail = probe_detail
+                cell_detail = s["detail"]
 
             table.add_row(
                 aid,
