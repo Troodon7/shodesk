@@ -114,10 +114,21 @@ def setup():
     # Target IDs
     print()
     print("  Enter AnyDesk IDs to monitor (comma-separated)")
-    print("  Example: 123456789,987654321")
+    print("  Or enter a path to a .txt file (one ID per line)")
+    print("  Example: 123456789,987654321  or  ~/targets.txt")
     while True:
-        raw = prompt("Target ID(s)")
-        ids = [x.strip() for x in raw.split(",") if x.strip()]
+        raw = prompt("Target ID(s) or file path")
+        raw_expanded = str(Path(raw).expanduser()) if raw else raw
+        if raw and Path(raw_expanded).is_file():
+            try:
+                lines = Path(raw_expanded).read_text().splitlines()
+                ids = [l.strip() for l in lines if l.strip() and not l.strip().startswith("#")]
+                print(f"  [+] Loaded {len(ids)} ID(s) from {raw_expanded}")
+            except OSError as e:
+                print(f"  [!] Could not read file: {e}")
+                continue
+        else:
+            ids = [x.strip() for x in raw.split(",") if x.strip()]
         bad = [x for x in ids if not re.match(r"^\d{9,10}$", x)]
         if bad:
             print(f"  [!] Invalid ID(s): {', '.join(bad)} — must be 9-10 digits")
