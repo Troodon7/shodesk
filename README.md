@@ -1,4 +1,4 @@
-# AnyDesk OSINT Monitor
+# Shodesk
 
 Track online/offline status of AnyDesk IDs using disposable Docker/Podman containers as probes. Each probe gets a fresh AnyDesk identity, queries one target through the AnyDesk relay network, and self-destructs — leaving no persistent footprint on your machine or the target.
 
@@ -23,8 +23,8 @@ When a target is confirmed online, the tool automatically runs a deeper recon pr
 ### 2. Clone and install Python dependencies
 
 ```bash
-git clone https://github.com/Troodon7/anydesk-monitor.git
-cd anydesk-monitor
+git clone https://github.com/Troodon7/shodesk.git
+cd shodesk
 pip install -r requirements.txt
 ```
 
@@ -48,7 +48,7 @@ The `"Emulate Docker CLI using podman"` message in output is normal.
 
 The monitor builds it automatically on first run. To build manually:
 ```bash
-docker build -t anydesk-probe docker/
+docker build -t shodesk-probe docker/
 ```
 
 ---
@@ -69,7 +69,7 @@ You will be prompted for:
 | Interval | Seconds between poll cycles | 30s |
 | Timeout | Max seconds per probe before giving up | 10s |
 | Display mode | `1` = live dashboard (requires rich), `2` = scrolling log | 1 |
-| CSV output file | Path for results CSV | `anydesk_monitor.csv` |
+| CSV output file | Path for results CSV | `shodesk.csv` |
 
 **Importing IDs from a file:**
 ```
@@ -84,13 +84,13 @@ You will be prompted for:
   [+] Loaded 3 ID(s) from /home/user/targets.txt
 ```
 
-> **Tip:** Run without `sudo` if using Podman rootless. Use an absolute path for the CSV (e.g. `~/anydesk_monitor.csv`) if the working directory is not writable.
+> **Tip:** Run without `sudo` if using Podman rootless. Use an absolute path for the CSV (e.g. `~/shodesk.csv`) if the working directory is not writable.
 
 **Stop monitoring:** `Ctrl+C` — cleanly kills all in-flight probe containers and prints a summary.
 
 **Output files:**
-- `anydesk_monitor.csv` — timestamped poll results (all cycles)
-- `anydesk_monitor_recon.jsonl` — OSINT data extracted on first online detection per session
+- `shodesk.csv` — timestamped poll results (all cycles)
+- `shodesk_recon.jsonl` — OSINT data extracted on first online detection per session
 
 ### Recon scanner — on-demand deep probe
 
@@ -112,7 +112,7 @@ python3 recon/ip_scan.py 123456789,987654321
     Endpoint   : 203.0.113.42:443
 ```
 
-Results saved to `~/anydesk_recon.json`.
+Results saved to `~/shodesk_recon.json`.
 
 ### Debug shell — inspect a probe container manually
 
@@ -137,7 +137,7 @@ tail -f /home/probeuser/.anydesk/anydesk.trace    # watch live trace output
 | Column | Description |
 |--------|-------------|
 | `timestamp` | ISO 8601 timestamp of the probe |
-| `anydesk_id` | Target AnyDesk ID |
+| `target_id` | Target AnyDesk ID |
 | `status` | `online`, `offline`, `unknown`, or `error` |
 | `remote_os` | Target OS (blank in 7.x standalone mode) |
 | `remote_version` | Target AnyDesk version (blank in 7.x standalone mode) |
@@ -218,12 +218,12 @@ sudo usermod -aG docker $USER && newgrp docker
 
 The probe image persists on disk between runs — containers are destroyed after each probe but the image stays until you delete it. To check if it exists:
 ```bash
-docker images anydesk-probe
+docker images shodesk-probe
 ```
 
 To remove it from disk:
 ```bash
-docker rmi anydesk-probe
+docker rmi shodesk-probe
 ```
 
 The next run of `monitor.py` will rebuild it automatically (~3 minutes).
@@ -232,7 +232,7 @@ The next run of `monitor.py` will rebuild it automatically (~3 minutes).
 
 Podman images in rootless mode may not persist across reboots. `monitor.py` detects this and auto-rebuilds. To rebuild manually:
 ```bash
-docker build -t anydesk-probe docker/
+docker build -t shodesk-probe docker/
 ```
 
 ### All probes return `unknown`
@@ -242,16 +242,16 @@ AnyDesk may have updated its trace log format. Signs:
 
 Update the `grep` patterns in `docker/probe.sh` then force a clean image rebuild:
 ```bash
-docker rmi anydesk-probe
-docker build -t anydesk-probe docker/
+docker rmi shodesk-probe
+docker build -t shodesk-probe docker/
 ```
 
 ### `/etc/anydesk` error in container logs
 
 Do a clean image rebuild:
 ```bash
-docker rmi anydesk-probe
-docker build -t anydesk-probe docker/
+docker rmi shodesk-probe
+docker build -t shodesk-probe docker/
 ```
 
 ---
@@ -259,7 +259,7 @@ docker build -t anydesk-probe docker/
 ## Project Structure
 
 ```
-anydesk_monitor/
+shodesk/
 ├── monitor.py                  # Interactive setup + probe loop
 ├── requirements.txt            # pip dependencies
 ├── docker/

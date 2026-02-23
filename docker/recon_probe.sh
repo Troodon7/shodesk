@@ -1,6 +1,6 @@
 #!/bin/bash
 # Author: troodon7 (https://github.com/troodon7)
-# AnyDesk Recon Probe — OSINT extraction via trace log analysis
+# Shodesk Recon Probe — OSINT extraction via trace log analysis
 #
 # Runs alongside the existing probe architecture but waits 1.5s past
 # initial connection to capture P2P negotiation data (punch_connector
@@ -13,7 +13,7 @@
 #   docker run --rm --network=host --security-opt apparmor=unconfined \
 #     -v /path/to/recon_probe.sh:/recon_probe.sh:ro \
 #     -e TARGET_ID=... -e TIMEOUT=20 \
-#     --entrypoint /recon_probe.sh anydesk-probe
+#     --entrypoint /recon_probe.sh shodesk-probe
 #
 # Environment:
 #   TARGET_ID  — AnyDesk ID to probe (required)

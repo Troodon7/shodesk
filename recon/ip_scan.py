@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Author: troodon7 (https://github.com/troodon7)
 """
-AnyDesk Recon Scanner — OSINT extraction for confirmed-online IDs
+Shodesk Recon Scanner — OSINT extraction for confirmed-online IDs
 
 Runs a separate recon probe that waits past initial connection to capture:
   - Target's public IP and port
@@ -22,7 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 RECON_PROBE = Path(__file__).parent.parent / "docker" / "recon_probe.sh"
-IMAGE = "anydesk-probe"
+IMAGE = "shodesk-probe"
 TIMEOUT = 20
 
 
@@ -94,7 +94,7 @@ def main():
     ids = sys.argv[1:] if len(sys.argv) > 1 else []
 
     if not ids:
-        print("\n  AnyDesk Recon Scanner")
+        print("\n  Shodesk Recon Scanner")
         print("  Enter IDs to probe (comma-separated):")
         raw = input("  > ").strip()
         ids = [x.strip() for x in raw.split(",") if x.strip()]
@@ -114,7 +114,7 @@ def main():
         results.append(r)
 
     # Save JSON
-    out = Path.home() / "anydesk_recon.json"
+    out = Path.home() / "shodesk_recon.json"
     with open(out, "w") as f:
         json.dump(results, f, indent=2)
     print(f"  Results saved to: {out}")

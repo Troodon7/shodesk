@@ -1,4 +1,4 @@
-"""CSV logger for AnyDesk OSINT Monitor."""
+"""CSV logger for Shodesk."""
 
 import csv
 import os
@@ -7,7 +7,7 @@ from datetime import datetime
 
 HEADERS = [
     "timestamp",
-    "anydesk_id",
+    "target_id",
     "status",
     "remote_os",
     "remote_version",

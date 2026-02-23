@@ -1,4 +1,4 @@
-"""Rich Live dashboard for AnyDesk OSINT Monitor."""
+"""Rich Live dashboard for Shodesk."""
 
 from datetime import datetime, timedelta
 
@@ -17,7 +17,7 @@ STATUS_STYLES = {
 
 
 class Dashboard:
-    """Real-time terminal dashboard showing AnyDesk ID status."""
+    """Real-time terminal dashboard showing target ID status."""
 
     def __init__(self, ids, interval, image_name):
         self.ids = ids
@@ -53,7 +53,7 @@ class Dashboard:
         self.state[aid]["recon"] = "\n".join(lines)
 
     def update(self, aid, result):
-        """Update state for an AnyDesk ID with a probe result dict."""
+        """Update state for a target ID with a probe result dict."""
         s = self.state[aid]
         s["status"] = result.get("status", "unknown")
         s["detail"] = result.get("detail", "")
@@ -75,11 +75,11 @@ class Dashboard:
         runtime_str = str(timedelta(seconds=int(runtime.total_seconds())))
 
         table = Table(
-            title=f"AnyDesk OSINT Monitor  |  interval: {self.interval}s  |  runtime: {runtime_str}",
+            title=f"Shodesk  |  interval: {self.interval}s  |  runtime: {runtime_str}",
             title_style="bold cyan",
             show_lines=True,
         )
-        table.add_column("AnyDesk ID", style="bold", width=14)
+        table.add_column("Target ID", style="bold", width=14)
         table.add_column("Status", width=10, justify="center")
         table.add_column("Detail", width=40)
         table.add_column("Last Online", width=20)

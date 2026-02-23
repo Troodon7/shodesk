@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Author: troodon7 (https://github.com/troodon7)
 """
-AnyDesk OSINT Monitor — Docker Probe Architecture
+Shodesk — Docker Probe Architecture
 
 Monitors AnyDesk IDs for online/offline status using disposable Docker
 containers. Each probe gets a fresh container (new AnyDesk ID), makes one
@@ -191,9 +191,9 @@ def setup():
 
     # CSV output path (always, useful for both modes)
     print()
-    config["output"] = prompt("CSV output file", str(Path.home() / "anydesk_monitor.csv"))
+    config["output"] = prompt("CSV output file", str(Path.home() / "shodesk.csv"))
 
-    config["image"] = "anydesk-probe"
+    config["image"] = "shodesk-probe"
 
     return config
 
@@ -328,7 +328,7 @@ def cleanup_containers(image_name):
 
 BANNER = """
     ╔══════════════════════════════════════════════════╗
-    ║         AnyDesk OSINT Monitor                    ║
+    ║         Shodesk                                  ║
     ║         Docker Probe Architecture                ║
     ╚══════════════════════════════════════════════════╝
 """
@@ -365,7 +365,7 @@ def main():
         sys.exit(1)
     print("  [+] Docker OK")
 
-    image_name = "anydesk-probe"
+    image_name = "shodesk-probe"
     if not ensure_image(image_name):
         sys.exit(1)
 
