@@ -1,2 +1,2 @@
-from .dashboard import Dashboard
-from .logger import CSVLogger
+# Lazy imports — Dashboard requires rich, logger does not.
+# Import each explicitly in the code that needs them.
