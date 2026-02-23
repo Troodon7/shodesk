@@ -33,14 +33,26 @@ def check_docker():
         print("      https://docs.docker.com/engine/install/")
         return False
     try:
-        subprocess.run(
+        result = subprocess.run(
             ["docker", "info"],
-            capture_output=True, timeout=10, check=True,
+            capture_output=True, timeout=10,
         )
-        return True
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        print("  [!] Docker daemon is not running. Start it:")
-        print("      sudo systemctl start docker")
+        if result.returncode == 0:
+            return True
+        stderr = result.stderr.decode(errors="replace").lower()
+        if "permission denied" in stderr or "connect: permission denied" in stderr:
+            print("  [!] Permission denied — current user cannot access Docker.")
+            print("      Fix: add your user to the docker group then re-login:")
+            print(f"      sudo usermod -aG docker $USER && newgrp docker")
+            print("      Or run monitor.py with sudo.")
+        elif "cannot connect" in stderr or "is the docker daemon running" in stderr:
+            print("  [!] Docker daemon is not running. Start it:")
+            print("      sudo systemctl start docker")
+        else:
+            print(f"  [!] Docker error: {result.stderr.decode(errors='replace').strip()[:200]}")
+        return False
+    except subprocess.TimeoutExpired:
+        print("  [!] Docker daemon timed out — may be starting up, try again.")
         return False
 
 
