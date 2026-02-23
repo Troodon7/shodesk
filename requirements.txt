@@ -1,1 +1,2 @@
-rich
+# Required
+rich>=10.0.0      # Live dashboard display (also enables log mode formatting)
