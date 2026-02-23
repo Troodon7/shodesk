@@ -455,8 +455,7 @@ def main():
                         f"    FPR        : {fpr}",
                     ] + [f"    Endpoint   : {ep}" for ep in candidates]
                     if display:
-                        for line in recon_lines:
-                            display.live.console.print(line)
+                        display.set_recon(aid, recon)
                     else:
                         for line in recon_lines:
                             print(line)

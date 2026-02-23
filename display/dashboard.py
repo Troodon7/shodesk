@@ -33,12 +33,24 @@ class Dashboard:
                 "status": "pending",
                 "remote_os": "",
                 "detail": "",
+                "recon": "",
                 "elapsed_ms": 0,
                 "last_checked": None,
                 "last_online": None,
                 "checks": 0,
                 "online_count": 0,
             }
+
+    def set_recon(self, aid, recon):
+        """Store formatted recon data for display in the detail pane."""
+        lines = [
+            f"Public IP  : {recon.get('public_ip', '?')}:{recon.get('public_port', '?')}",
+            f"Relay      : {recon.get('relay_id', '?')} ({recon.get('relay_ip', '?')})",
+            f"FPR        : {recon.get('fpr_short', '?')}",
+        ]
+        for ep in recon.get("connection_candidates", []):
+            lines.append(f"Endpoint   : {ep}")
+        self.state[aid]["recon"] = "\n".join(lines)
 
     def update(self, aid, result):
         """Update state for an AnyDesk ID with a probe result dict."""
@@ -86,10 +98,17 @@ class Dashboard:
             if s["last_checked"]:
                 last_checked = s["last_checked"].strftime("%Y-%m-%d %H:%M:%S")
 
+            recon = s.get("recon", "")
+            probe_detail = s["detail"]
+            if recon:
+                cell_detail = recon + "\n" + "─" * 30 + "\n" + probe_detail
+            else:
+                cell_detail = probe_detail
+
             table.add_row(
                 aid,
                 status_text,
-                s["detail"],
+                cell_detail,
                 last_online,
                 last_checked,
             )
