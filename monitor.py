@@ -328,7 +328,7 @@ def cleanup_containers(image_name):
 
 BANNER = """
     ╔══════════════════════════════════════════════════╗
-    ║         Shodesk                                  ║
+    ║         Shodesk OSINT Monitor                    ║
     ║         Docker Probe Architecture                ║
     ╚══════════════════════════════════════════════════╝
 """
