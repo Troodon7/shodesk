@@ -65,11 +65,24 @@ You will be prompted for:
 
 | Prompt | Description | Default |
 |--------|-------------|---------|
-| Target ID(s) | Comma-separated AnyDesk IDs to monitor | — |
+| Target ID(s) or file path | Comma-separated AnyDesk IDs **or** path to a `.txt` file (one ID per line) | — |
 | Interval | Seconds between poll cycles | 30s |
 | Timeout | Max seconds per probe before giving up | 10s |
 | Display mode | `1` = live dashboard (requires rich), `2` = scrolling log | 1 |
 | CSV output file | Path for results CSV | `anydesk_monitor.csv` |
+
+**Importing IDs from a file:**
+```
+# targets.txt — lines starting with # are ignored
+123456789
+987654321
+
+555666777
+```
+```bash
+  Target ID(s) or file path: ~/targets.txt
+  [+] Loaded 3 ID(s) from /home/user/targets.txt
+```
 
 > **Tip:** Run without `sudo` if using Podman rootless. Use an absolute path for the CSV (e.g. `~/anydesk_monitor.csv`) if the working directory is not writable.
 
