@@ -127,7 +127,19 @@ while IFS= read -r line; do
 done < <(echo "$LOG_CONTENT" | grep 'punch_connector.*-> Spawning:')
 CANDIDATES_JSON="${CANDIDATES_JSON}]"
 
+# When key fields are empty, include relevant trace log lines for diagnosis
+LOG_LINES_JSON="null"
+if [ -z "$PUBLIC_IP" ] || [ -z "$FPR_SHORT" ]; then
+    RAW=$(echo "$LOG_CONTENT" \
+        | grep -iE 'relay|fpr|fingerprint|logged in|punch|connect|spawn|candidate|session|p2p|direct|addr|ip' \
+        | tail -40 \
+        | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/ /g' \
+        | awk '{printf "%s\\n", $0}' \
+        | head -c 3000)
+    LOG_LINES_JSON="\"${RAW}\""
+fi
+
 # Build output JSON
 cat <<EOF
-{"id":"${TARGET_ID}","status":"online","public_ip":"${PUBLIC_IP:-}","public_port":"${PUBLIC_PORT:-}","relay_id":"${RELAY_ID:-}","relay_ip":"${RELAY_IP:-}","fpr_short":"${FPR_SHORT:-}","fpr_full":"${FPR_FULL:-}","connection_candidates":${CANDIDATES_JSON},"elapsed_ms":${ELAPSED_TOTAL}}
+{"id":"${TARGET_ID}","status":"online","public_ip":"${PUBLIC_IP:-}","public_port":"${PUBLIC_PORT:-}","relay_id":"${RELAY_ID:-}","relay_ip":"${RELAY_IP:-}","fpr_short":"${FPR_SHORT:-}","fpr_full":"${FPR_FULL:-}","connection_candidates":${CANDIDATES_JSON},"elapsed_ms":${ELAPSED_TOTAL},"log_lines":${LOG_LINES_JSON}}
 EOF

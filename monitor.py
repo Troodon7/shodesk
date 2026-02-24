@@ -24,6 +24,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+IS_MAC = sys.platform == "darwin"
+
 try:
     import readline
     _HAS_READLINE = True
@@ -50,8 +52,12 @@ def _path_completer(text, state):
 def check_docker():
     """Verify Docker is available and running."""
     if not shutil.which("docker"):
-        print("  [!] Docker not found. Install it first:")
-        print("      https://docs.docker.com/engine/install/")
+        if IS_MAC:
+            print("  [!] Docker not found. Install Docker Desktop:")
+            print("      https://docs.docker.com/desktop/install/mac-install/")
+        else:
+            print("  [!] Docker not found. Install it first:")
+            print("      https://docs.docker.com/engine/install/")
         return False
     try:
         result = subprocess.run(
@@ -67,8 +73,12 @@ def check_docker():
             print(f"      sudo usermod -aG docker $USER && newgrp docker")
             print("      Or run monitor.py with sudo.")
         elif "cannot connect" in stderr or "is the docker daemon running" in stderr:
-            print("  [!] Docker daemon is not running. Start it:")
-            print("      sudo systemctl start docker")
+            if IS_MAC:
+                print("  [!] Docker daemon is not running.")
+                print("      Start Docker Desktop from your Applications folder.")
+            else:
+                print("  [!] Docker daemon is not running. Start it:")
+                print("      sudo systemctl start docker")
         else:
             print(f"  [!] Docker error: {result.stderr.decode(errors='replace').strip()[:200]}")
         return False
@@ -112,6 +122,42 @@ def check_rich():
         return True
     except ImportError:
         return False
+
+
+def check_mac_host_networking():
+    """Verify Docker Desktop's beta host networking is enabled on macOS.
+
+    Without it, --network=host uses the Linux VM's network, not the Mac's,
+    so P2P punch-through fails and recon returns no IP/FPR data.
+    """
+    import json as _json
+    settings_paths = [
+        Path.home() / "Library/Group Containers/group.com.docker/settings-store.json",
+        Path.home() / "Library/Group Containers/group.com.docker/settings.json",
+    ]
+    for path in settings_paths:
+        if not path.exists():
+            continue
+        try:
+            with open(path) as f:
+                cfg = _json.load(f)
+            for key in ("hostNetworkingEnabled", "enableHostNetworking", "HostNetworkingEnabled"):
+                if key in cfg:
+                    if cfg[key]:
+                        return True
+                    print("  [!] Docker Desktop host networking is disabled.")
+                    print("      Without it, recon (IP/FPR) will return no data on macOS.")
+                    print("      Enable it: Docker Desktop → Settings → Resources → Network")
+                    print("                 → 'Enable host networking' (beta)")
+                    print("      Then restart Docker Desktop and re-run monitor.py.")
+                    return False
+        except (OSError, _json.JSONDecodeError):
+            continue
+    # Can't read settings — warn but don't block
+    print("  [~] Could not verify Docker Desktop host networking setting.")
+    print("      If recon data (IP/FPR) is empty, enable it in:")
+    print("      Docker Desktop → Settings → Resources → Network → Enable host networking")
+    return True
 
 
 # ── Interactive Setup ────────────────────────────────────────────────────
@@ -230,15 +276,19 @@ def setup():
 def run_probe(aid, image_name, timeout):
     """Run a single Docker probe container and return the parsed result."""
     try:
+        docker_cmd = [
+            "docker", "run", "--rm",
+            "-e", f"TARGET_ID={aid}",
+            "-e", f"TIMEOUT={timeout}",
+        ]
+        # macOS: bridge networking is sufficient for relay-based online/offline
+        # detection and avoids gVisor port conflicts (7070, ephemeral ports).
+        # --network=host is only needed by run_recon_probe for real P2P/IP data.
+        if not IS_MAC:
+            docker_cmd += ["--network=host", "--security-opt", "apparmor=unconfined"]
+        docker_cmd.append(image_name)
         result = subprocess.run(
-            [
-                "docker", "run", "--rm",
-                "-e", f"TARGET_ID={aid}",
-                "-e", f"TIMEOUT={timeout}",
-                "--network=host",
-                "--security-opt", "apparmor=unconfined",
-                image_name,
-            ],
+            docker_cmd,
             capture_output=True, text=True,
             timeout=timeout + 40,
         )
@@ -304,23 +354,31 @@ def run_recon_probe(aid, image_name, recon_script, timeout=20):
             "detail": f"recon_probe.sh not found: {recon_script}",
         }
     try:
+        docker_cmd = [
+            "docker", "run", "--rm",
+            "--network=host",
+        ]
+        if not IS_MAC:
+            docker_cmd += ["--security-opt", "apparmor=unconfined"]
+        docker_cmd += [
+            "-v", f"{recon_script}:/recon_probe.sh:ro",
+            "-e", f"TARGET_ID={aid}",
+            "-e", f"TIMEOUT={timeout}",
+            "--entrypoint", "bash",
+            image_name, "/recon_probe.sh",
+        ]
         result = subprocess.run(
-            [
-                "docker", "run", "--rm",
-                "--network=host",
-                "--security-opt", "apparmor=unconfined",
-                "-v", f"{recon_script}:/recon_probe.sh:ro",
-                "-e", f"TARGET_ID={aid}",
-                "-e", f"TIMEOUT={timeout}",
-                "--entrypoint", "/recon_probe.sh",
-                image_name,
-            ],
+            docker_cmd,
             capture_output=True, text=True,
             timeout=timeout + 30,
         )
         stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
         if not stdout:
-            return {"id": aid, "status": "error", "detail": "No output from recon probe"}
+            detail = f"No output from recon probe (exit {result.returncode})"
+            if stderr:
+                detail += f" — stderr: {stderr[-400:]}"
+            return {"id": aid, "status": "error", "detail": detail}
         for line in reversed(stdout.splitlines()):
             line = line.strip()
             if line.startswith("{"):
@@ -367,15 +425,16 @@ def debug_shell(image_name, target_id):
     print("  Run probe manually:  bash /probe.sh")
     print("  Watch AnyDesk logs:  tail -f /home/probeuser/.anydesk/anydesk.trace")
     print("  Exit shell to quit.\n")
-    subprocess.run([
+    docker_cmd = [
         "docker", "run", "--rm", "-it",
         "-e", f"TARGET_ID={target_id}",
         "-e", "TIMEOUT=30",
         "--network=host",
-        "--security-opt", "apparmor=unconfined",
-        "--entrypoint", "bash",
-        image_name,
-    ])
+    ]
+    if not IS_MAC:
+        docker_cmd += ["--security-opt", "apparmor=unconfined"]
+    docker_cmd += ["--entrypoint", "bash", image_name]
+    subprocess.run(docker_cmd)
 
 
 def main():
@@ -391,6 +450,10 @@ def main():
     if not check_docker():
         sys.exit(1)
     print("  [+] Docker OK")
+    if IS_MAC:
+        if not check_mac_host_networking():
+            sys.exit(1)
+        print("  [+] Docker host networking OK")
 
     image_name = "shodesk-probe"
     if not ensure_image(image_name):
@@ -486,6 +549,11 @@ def main():
                     else:
                         for line in recon_lines:
                             print(line)
+                    if log_lines := recon.get("log_lines"):
+                        print("  [RECON DEBUG] Trace log lines (patterns didn't match):")
+                        for ll in log_lines.split("\\n"):
+                            if ll.strip():
+                                print(f"    {ll}")
 
                 if display:
                     display.update(aid, result)

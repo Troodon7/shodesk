@@ -1,11 +1,11 @@
 # Shodesk
 
-Track online/offline status of AnyDesk IDs using disposable Docker/Podman containers as probes. Each probe gets a fresh AnyDesk identity, queries one target through the AnyDesk relay network, and self-destructs — leaving no persistent footprint on your machine or the target.
+Track online/offline status of AnyDesk IDs using disposable Docker containers as probes. Each probe gets a fresh AnyDesk identity, queries one target through the AnyDesk relay network, and self-destructs — leaving no persistent footprint on your machine or the target.
 
 When a target is confirmed online, the tool automatically runs a deeper recon probe to extract the target's public IP, device fingerprint, relay assignment, and all advertised LAN/VPN endpoints.
 
-**Platform:** Linux  
-**Tested with:** AnyDesk 7.1.4, Docker / Podman
+**Platform:** Linux, macOS (Docker Desktop 4.29+)
+**Tested with:** AnyDesk 7.1.4, Docker / Docker Desktop
 
 ---
 
@@ -13,12 +13,17 @@ When a target is confirmed online, the tool automatically runs a deeper recon pr
 
 ### 1. Prerequisites
 
-| Requirement | Notes |
-|-------------|-------|
-| Linux | `--network=host` is Linux-only |
-| Docker or Podman | Daemon must be running |
-| Python 3.6+ | Standard library only for log mode |
-| `rich` | Optional — enables live dashboard |
+| Requirement | Linux | macOS |
+|-------------|-------|-------|
+| Docker | Daemon running, user in `docker` group | Docker Desktop 4.29+ |
+| Python 3.6+ | Standard library only for log mode | Same |
+| `rich` | Optional — enables live dashboard | Same |
+
+**macOS additional requirement:** Docker Desktop's beta host networking feature must be enabled for the recon probe to capture real P2P/IP data:
+
+> Docker Desktop → Settings → Resources → Network → **Enable host networking** → Apply & Restart
+
+Without it, regular online/offline polling still works, but the recon probe will return empty IP/FPR fields.
 
 ### 2. Clone and install Python dependencies
 
@@ -30,19 +35,14 @@ pip install -r requirements.txt
 
 > `rich` is optional. The tool runs in log mode without it.
 
-### 3. Docker / Podman setup
+### 3. Docker setup
 
-**Docker** — if your user gets a permission error:
+**Linux** — if your user gets a permission error:
 ```bash
 sudo usermod -aG docker $USER && newgrp docker
 ```
 
-**Podman** — install the Docker compatibility shim:
-```bash
-sudo apt install podman-docker   # Debian/Ubuntu
-```
-
-The `"Emulate Docker CLI using podman"` message in output is normal.
+**macOS** — open Docker Desktop and verify it shows "Engine running" in the menu bar.
 
 ### 4. Build the probe image (first run only, ~3 minutes)
 
@@ -83,8 +83,6 @@ You will be prompted for:
   Target ID(s) or file path: ~/targets.txt
   [+] Loaded 3 ID(s) from /home/user/targets.txt
 ```
-
-> **Tip:** Run without `sudo` if using Podman rootless. Use an absolute path for the CSV (e.g. `~/shodesk.csv`) if the working directory is not writable.
 
 **Stop monitoring:** `Ctrl+C` — cleanly kills all in-flight probe containers and prints a summary.
 
@@ -201,18 +199,41 @@ With 3 IDs at a 30s interval: ~10–12s probing, ~18–20s idle.
 
 ## Networking
 
-Containers use `--network=host`. AnyDesk requires outbound TLS to `relay-*.net.anydesk.com` on port 443. For offline targets, the relay responds immediately — no traffic ever reaches the target device. For online targets, the connection request reaches the target relay endpoint but is killed before any session is accepted.
+### Linux
+
+All containers use `--network=host`. AnyDesk requires outbound TLS to `relay-*.net.anydesk.com` on port 443. For offline targets, the relay responds immediately — no traffic ever reaches the target device. For online targets, the connection request reaches the target relay endpoint but is killed before any session is accepted.
+
+### macOS
+
+Docker Desktop's gVisor network stack isolates containers from the Mac's real network interfaces. To work around this, two different networking modes are used:
+
+| Probe | Network mode | Why |
+|-------|-------------|-----|
+| Regular poll (`probe.sh`) | Bridge (default) | Relay-based online/offline detection works through Docker Desktop NAT — no host port conflicts |
+| Recon (`recon_probe.sh`) | `--network=host` | Requires Docker Desktop host networking (beta) to participate in P2P NAT negotiation and capture the target's real public IP and fingerprint |
+
+Using bridge for the regular probe avoids port conflicts caused by Docker Desktop's gVisor proxy holding onto AnyDesk's ports (7070, ephemeral) between sequential container runs.
 
 ---
 
 ## Troubleshooting
 
-### "Permission denied" when running docker
+### "Permission denied" when running docker (Linux)
 
 Add your user to the docker group:
 ```bash
 sudo usermod -aG docker $USER && newgrp docker
 ```
+
+### macOS: recon returns empty IP/FPR fields
+
+The recon probe uses `--network=host` to participate in P2P NAT negotiation. Without Docker Desktop's beta host networking enabled, the container sees the Linux VM's network instead of the Mac's real interfaces, so P2P fails and no OSINT data is captured.
+
+Enable it: Docker Desktop → Settings → Resources → Network → **Enable host networking** → Apply & Restart
+
+### macOS: "Docker daemon is not running"
+
+Open Docker Desktop from your Applications folder and wait for the engine to start before re-running `monitor.py`.
 
 ### Checking and removing the probe image
 
@@ -227,13 +248,6 @@ docker rmi shodesk-probe
 ```
 
 The next run of `monitor.py` will rebuild it automatically (~3 minutes).
-
-### Probe image not found after reboot
-
-Podman images in rootless mode may not persist across reboots. `monitor.py` detects this and auto-rebuilds. To rebuild manually:
-```bash
-docker build -t shodesk-probe docker/
-```
 
 ### All probes return `unknown`
 
@@ -272,12 +286,21 @@ shodesk/
 ├── recon/
 │   └── ip_scan.py              # Standalone OSINT scanner (on-demand recon)
 └── reference_material/         # Local only — not committed to repo
-    └── recon_20260223_000129/  # Trace data from initial recon session
 ```
 
 ---
 
 ## Changelog
+
+### 2026-02-23 — macOS compatibility
+
+- **Platform support extended to macOS** (Docker Desktop 4.29+ with host networking beta)
+- Regular poll probe switches to bridge networking on macOS — eliminates gVisor port conflicts on ports 7070 and ephemeral AnyDesk ports; relay-based detection still works
+- Recon probe retains `--network=host` on macOS for real P2P/IP data capture
+- Preflight on macOS checks Docker Desktop host networking setting and prints setup instructions if disabled
+- macOS-specific error messages for Docker not found and daemon not running
+- Dropped `--security-opt apparmor=unconfined` on macOS (AppArmor is Linux-only)
+- `recon_probe.sh` now invoked via `bash` entrypoint — resilient to missing execute permission after `git clone`
 
 ### 2026-02-23 — Recon probe + auto-OSINT
 

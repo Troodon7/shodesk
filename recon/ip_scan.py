@@ -21,6 +21,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+IS_MAC = sys.platform == "darwin"
+
 RECON_PROBE = Path(__file__).parent.parent / "docker" / "recon_probe.sh"
 IMAGE = "shodesk-probe"
 TIMEOUT = 20
@@ -29,17 +31,21 @@ TIMEOUT = 20
 def run_recon(target_id: str) -> dict:
     """Run recon probe container for a single AnyDesk ID."""
     try:
+        docker_cmd = [
+            "docker", "run", "--rm",
+            "--network=host",
+        ]
+        if not IS_MAC:
+            docker_cmd += ["--security-opt", "apparmor=unconfined"]
+        docker_cmd += [
+            "-v", f"{RECON_PROBE}:/recon_probe.sh:ro",
+            "-e", f"TARGET_ID={target_id}",
+            "-e", f"TIMEOUT={TIMEOUT}",
+            "--entrypoint", "bash",
+            IMAGE, "/recon_probe.sh",
+        ]
         result = subprocess.run(
-            [
-                "docker", "run", "--rm",
-                "--network=host",
-                "--security-opt", "apparmor=unconfined",
-                "-v", f"{RECON_PROBE}:/recon_probe.sh:ro",
-                "-e", f"TARGET_ID={target_id}",
-                "-e", f"TIMEOUT={TIMEOUT}",
-                "--entrypoint", "/recon_probe.sh",
-                IMAGE,
-            ],
+            docker_cmd,
             capture_output=True, text=True,
             timeout=TIMEOUT + 30,
         )
