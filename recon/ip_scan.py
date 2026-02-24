@@ -16,6 +16,8 @@ Usage:
 """
 
 import json
+import os
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -109,6 +111,11 @@ def main():
         print("  No IDs provided.")
         sys.exit(1)
 
+    bad = [x for x in ids if not re.match(r"^\d{9,10}$", x)]
+    if bad:
+        print(f"  [!] Invalid ID(s): {', '.join(bad)} — must be 9–10 digits")
+        sys.exit(1)
+
     print(f"\n  Probing {len(ids)} ID(s) — timeout {TIMEOUT}s each\n")
     print(f"  {'─' * 60}")
 
@@ -120,9 +127,16 @@ def main():
         results.append(r)
 
     # Save JSON
-    out = Path.home() / "shodesk_recon.json"
+    log_dir = Path.home() / "shodesk-logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out = log_dir / f"recon_{ts}.json"
     with open(out, "w") as f:
         json.dump(results, f, indent=2)
+    try:
+        os.chmod(out, 0o600)
+    except OSError:
+        pass
     print(f"  Results saved to: {out}")
 
 

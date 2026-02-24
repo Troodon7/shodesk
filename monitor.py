@@ -25,6 +25,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+SESSION_TS = datetime.now().strftime("%Y%m%d_%H%M%S")
+
 # Vendored dependencies — packages/ ships with the repo so pip install is not required
 sys.path.insert(0, str(Path(__file__).parent / "packages"))
 
@@ -277,7 +279,9 @@ def setup():
 
     # CSV output path (always, useful for both modes)
     print()
-    config["output"] = prompt("CSV output file", str(Path.home() / "shodesk.csv"))
+    default_log_dir = Path.home() / "shodesk-logs"
+    default_csv = default_log_dir / f"shodesk_{SESSION_TS}.csv"
+    config["output"] = prompt("CSV output file", str(default_csv))
 
     config["image"] = "shodesk-probe"
 
@@ -340,7 +344,7 @@ def run_probe(aid, image_name, timeout):
         return {
             "id": aid,
             "status": "error",
-            "detail": f"Container timed out after {timeout + 20}s",
+            "detail": f"Container timed out after {timeout + 40}s",
             "elapsed_ms": 0,
         }
     except Exception as e:
@@ -456,6 +460,10 @@ def main():
                         help="Drop into a bash shell inside the probe container for TARGET_ID")
     args, _ = parser.parse_known_args()
 
+    if args.debug and not re.match(r"^\d{9,10}$", args.debug):
+        print(f"  [!] Invalid ID '{args.debug}' — must be 9–10 digits")
+        sys.exit(1)
+
     print(BANNER)
 
     # Step 1: Preflight
@@ -484,6 +492,7 @@ def main():
     recon_done = set()
     recon_script = Path(__file__).parent / "docker" / "recon_probe.sh"
     csv_path = Path(config["output"]).expanduser()
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
     recon_out = csv_path.parent / (csv_path.stem + "_recon.jsonl")
 
     # Step 3: Confirm and launch
@@ -510,6 +519,10 @@ def main():
 
     from display.logger import CSVLogger
     logger = CSVLogger(config["output"])
+    try:
+        os.chmod(csv_path, 0o600)
+    except OSError:
+        pass
 
     if config["mode"] == "log":
         print(f"\n  Monitoring — Ctrl+C to stop")
@@ -548,6 +561,11 @@ def main():
                     recon["timestamp"] = datetime.now().isoformat()
                     with open(recon_out, "a") as rf:
                         rf.write(json.dumps(recon) + "\n")
+                    if recon_out.stat().st_size <= len(json.dumps(recon)) + 2:
+                        try:
+                            os.chmod(recon_out, 0o600)
+                        except OSError:
+                            pass
                     ip = recon.get("public_ip", "?")
                     fpr = recon.get("fpr_short", "?")
                     candidates = recon.get("connection_candidates", [])

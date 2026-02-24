@@ -28,6 +28,9 @@ json_result() {
     local status="$1" detail="$2" elapsed="$3"
     detail="${detail//\\/\\\\}"
     detail="${detail//\"/\\\"}"
+    detail="${detail//$'\n'/\\n}"
+    detail="${detail//$'\r'/\\r}"
+    detail="${detail//$'\t'/\\t}"
     echo "{\"id\":\"${TARGET_ID}\",\"status\":\"${status}\",\"detail\":\"${detail}\",\"elapsed_ms\":${elapsed}}"
 }
 
@@ -46,7 +49,7 @@ sleep 0.3
 
 # --- Launch AnyDesk in standalone mode ---
 
-su "$PROBE_USER" -c "DISPLAY=\":${DISPLAY_NUM}\" anydesk ${TARGET_ID}" &>/dev/null &
+su "$PROBE_USER" -c "DISPLAY=\":${DISPLAY_NUM}\" anydesk \"${TARGET_ID}\"" &>/dev/null &
 
 # Wait up to 10s for trace log to appear
 INIT_WAIT=0

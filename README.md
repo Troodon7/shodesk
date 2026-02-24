@@ -94,9 +94,9 @@ You will be prompted for:
 
 **Stop monitoring:** `Ctrl+C` — cleanly kills all in-flight probe containers and prints a summary.
 
-**Output files:**
-- `shodesk.csv` — timestamped poll results (all cycles)
-- `shodesk_recon.jsonl` — OSINT data extracted on first online detection per session
+**Output files** (in `~/shodesk-logs/`):
+- `shodesk_YYYYMMDD_HHMMSS.csv` — timestamped poll results (all cycles)
+- `shodesk_YYYYMMDD_HHMMSS_recon.jsonl` — OSINT data extracted on first online detection per session
 
 ### Recon scanner — on-demand deep probe
 
@@ -118,7 +118,7 @@ python3 recon/ip_scan.py 123456789,987654321
     Endpoint   : 203.0.113.42:443
 ```
 
-Results saved to `~/shodesk_recon.json`.
+Results saved to `~/shodesk-logs/recon_YYYYMMDD_HHMMSS.json`.
 
 ### Debug shell — inspect a probe container manually
 

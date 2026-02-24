@@ -2,6 +2,26 @@
 
 ---
 
+## v1.3 — Security hardening + session log files
+
+**Security fixes**
+- `ip_scan.py`: added ID validation (9–10 digits) matching monitor.py — was missing entirely
+- `monitor.py`: validate `--debug` ID argument before passing to container
+- `probe.sh` / `recon_probe.sh`: quote `${TARGET_ID}` in anydesk invocation
+- `probe.sh`: escape newlines, carriage returns, and tabs in JSON output
+- Output files now created with permissions 600 (no longer world-readable)
+- Fixed timeout error message: reported +20s, actual was +40s
+
+**Session log files**
+- Each run creates new timestamped files — no more appending to a single growing CSV
+- Default output directory: `~/shodesk-logs/`
+- CSV: `~/shodesk-logs/shodesk_YYYYMMDD_HHMMSS.csv`
+- Recon JSONL: `~/shodesk-logs/shodesk_YYYYMMDD_HHMMSS_recon.jsonl`
+- `ip_scan.py` recon output: `~/shodesk-logs/recon_YYYYMMDD_HHMMSS.json`
+- Directory created automatically on first run
+
+---
+
 ## v1.2 — Vendored dependencies; no pip required
 
 - **`rich` bundled in `packages/`** — loaded automatically at startup via `sys.path`, no install step needed
