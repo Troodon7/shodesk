@@ -25,6 +25,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+# Vendored dependencies — packages/ ships with the repo so pip install is not required
+sys.path.insert(0, str(Path(__file__).parent / "packages"))
+
 IS_MAC = sys.platform == "darwin"
 
 try:

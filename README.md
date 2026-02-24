@@ -25,7 +25,7 @@ When a target is confirmed online, the tool automatically runs a deeper recon pr
 |-------------|-------|-------|
 | Docker | Daemon running, user in `docker` group | Docker Desktop 4.29+ |
 | Python 3.6+ | Standard library only for log mode | Same |
-| `rich` | Optional — enables live dashboard | Same |
+| `rich` | **Bundled** — no install needed (`packages/` ships with repo) | Same |
 
 **macOS additional requirement:** Docker Desktop's beta host networking feature must be enabled for the recon probe to capture real P2P/IP data:
 
@@ -38,10 +38,10 @@ Without it, regular online/offline polling still works, but the recon probe will
 ```bash
 git clone https://github.com/Troodon7/shodesk.git
 cd shodesk
-pip install -r requirements.txt
+pip install -r requirements.txt  # nothing required — rich is bundled
 ```
 
-> `rich` is optional. The tool runs in log mode without it.
+> `rich` is bundled in `packages/` — no install required. The tool also runs in log mode without it if you remove that folder.
 
 ### 3. Docker setup
 

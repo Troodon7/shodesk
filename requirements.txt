@@ -1,2 +1,4 @@
-# Required
-rich>=10.0.0      # Live dashboard display (also enables log mode formatting)
+# rich is vendored in packages/ — no pip install needed.
+# The packages/ directory ships with the repo and is added to sys.path
+# automatically at startup. Only install manually if you want a newer version:
+#   pip install rich
