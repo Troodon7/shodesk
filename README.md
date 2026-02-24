@@ -13,6 +13,7 @@ When a target is confirmed online, the tool automatically runs a deeper recon pr
 | Parrot Security (Linux) | 7.1 "echo" | Podman rootless; primary dev/test environment |
 | Ubuntu 22.04 LTS (Linux) | 22.04 | Docker; also used as container base image |
 | macOS | *(not yet tested — placeholder)* | Docker Desktop 4.29+ required |
+| BlackArch (Lite / Full) | *(untested)* | Arch-based; Docker via `pacman -S docker`; AppArmor not present but flag is safely ignored |
 | AnyDesk | 7.1.4 | Probe target; patterns may differ on other versions |
 
 ---
@@ -302,6 +303,8 @@ shodesk/
 ## Roadmap / TODO
 
 - [ ] **TeamViewer support** — explore TeamViewer as a monitoring target alongside AnyDesk
+- [ ] **Test on macOS** — Docker Desktop 4.29+; verify recon P2P/IP capture with host networking enabled
+- [ ] **Test on BlackArch** — Lite and Full; confirm Docker setup and `apparmor=unconfined` no-op behaviour
 
 ---
 
