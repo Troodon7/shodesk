@@ -33,15 +33,14 @@ When a target is confirmed online, the tool automatically runs a deeper recon pr
 
 Without it, regular online/offline polling still works, but the recon probe will return empty IP/FPR fields.
 
-### 2. Clone and install Python dependencies
+### 2. Clone
 
 ```bash
 git clone https://github.com/Troodon7/shodesk.git
 cd shodesk
-pip install -r requirements.txt  # nothing required — rich is bundled
 ```
 
-> `rich` is bundled in `packages/` — no install required. The tool also runs in log mode without it if you remove that folder.
+> No dependencies to install. `rich` is bundled in `packages/` and loaded automatically at startup.
 
 ### 3. Docker setup
 

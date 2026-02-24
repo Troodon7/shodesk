@@ -2,6 +2,13 @@
 
 ---
 
+## v1.2 — Vendored dependencies; no pip required
+
+- **`rich` bundled in `packages/`** — loaded automatically at startup via `sys.path`, no install step needed
+- **`requirements.txt` removed** — modern distros (Arch, Debian, Ubuntu 23+) enforce PEP 668 externally-managed environments, which blocks system-wide `pip install` and demands `--break-system-packages` to override. Rather than fight the package manager, the dependency ships with the repo. Clone and run.
+
+---
+
 ## v1.1 — CSV target file support
 
 - **Target file input** — `.csv` files now accepted alongside `.txt`; first column is used, header rows and non-numeric values silently skipped
