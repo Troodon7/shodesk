@@ -1,29 +1,39 @@
 # Changelog
 
-## 2026-02-23 — macOS compatibility
+---
 
-- **Platform support extended to macOS** (Docker Desktop 4.29+ with host networking beta)
-- Regular poll probe switches to bridge networking on macOS — eliminates gVisor port conflicts on ports 7070 and ephemeral AnyDesk ports; relay-based detection still works
-- Recon probe retains `--network=host` on macOS for real P2P/IP data capture
-- Preflight on macOS checks Docker Desktop host networking setting and prints setup instructions if disabled
-- macOS-specific error messages for Docker not found and daemon not running
-- Dropped `--security-opt apparmor=unconfined` on macOS (AppArmor is Linux-only)
-- `recon_probe.sh` now invoked via `bash` entrypoint — resilient to missing execute permission after `git clone`
+## v1.1 — CSV target file support
 
-## 2026-02-23 — Recon probe + auto-OSINT
+- **Target file input** — `.csv` files now accepted alongside `.txt`; first column is used, header rows and non-numeric values silently skipped
+- `.txt` behavior unchanged — one ID per line, `#` comments supported
 
-- Added `docker/recon_probe.sh`: deep probe that captures public IP, device fingerprints, relay info, and P2P connection candidates
-- `monitor.py` now auto-fires recon probe on first online detection per session
-- Graceful shutdown with container cleanup on Ctrl+C
-- Added `recon/ip_scan.py` for standalone on-demand OSINT scans
+---
 
-## 2026-02-23 — AnyDesk 7.1.4 compatibility
+## v1.0 — Initial release
 
-AnyDesk 7.x introduced two breaking changes from the 6.x probe approach:
+**Core monitor**
+- Online/offline polling loop with configurable interval and timeout
+- Disposable Docker/Podman probe containers — fresh AnyDesk identity per probe, zero persistent footprint
+- Live dashboard (requires `rich`) and scrolling log mode
+- CSV output with timestamped poll results
+- Comma-separated IDs or `.txt` file import (one ID per line, `#` comments)
+- Ctrl+C graceful shutdown with container cleanup and session summary
 
-1. **`/etc/anydesk` required** — Fixed by adding `mkdir -p /etc/anydesk && chmod 777 /etc/anydesk` to the Dockerfile.
-2. **Auto-connect removed from CLI** — Fixed by switching to standalone mode: `anydesk TARGET_ID` without pre-starting `--service`.
+**Recon probe**
+- Auto-fires on first online detection per session
+- Extracts public IP, relay ID/IP, short and full device fingerprint, all P2P connection candidates
+- Standalone `recon/ip_scan.py` for on-demand OSINT without starting the full monitor
+- Output saved to `shodesk_recon.jsonl`
 
-New detection patterns for 7.x:
-- **Online:** `Connect request accepted, tunnel route created.`
-- **Offline:** `Client appears to be offline.`
+**AnyDesk 7.x compatibility**
+- Switched to standalone mode (`anydesk TARGET_ID`) — auto-connect via `--service` removed in 7.x
+- Added `/etc/anydesk` directory creation to Dockerfile (required by 7.x)
+- Detection patterns: `Connect request accepted, tunnel route created.` (online) / `Client appears to be offline.` (offline)
+- Tested with AnyDesk 7.1.4
+
+**macOS compatibility**
+- Docker Desktop 4.29+ supported (host networking beta required for recon)
+- Regular poll probe uses bridge networking on macOS — avoids gVisor port conflicts on AnyDesk ports
+- Recon probe uses `--network=host` on macOS for real P2P/IP capture
+- Preflight check warns if Docker Desktop host networking is disabled
+- AppArmor flags dropped on macOS (Linux-only)

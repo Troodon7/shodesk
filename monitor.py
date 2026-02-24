@@ -12,6 +12,7 @@ Just run it:
 """
 
 import argparse
+import csv
 import glob
 import json
 import os
@@ -181,8 +182,8 @@ def setup():
     # Target IDs
     print()
     print("  Enter AnyDesk IDs to monitor (comma-separated)")
-    print("  Or enter a path to a .txt file (one ID per line)")
-    print("  Example: 123456789,987654321  or  ~/targets.txt")
+    print("  Or enter a path to a file: .txt (one ID per line) or .csv (first column used)")
+    print("  Example: 123456789,987654321  or  ~/targets.txt  or  ~/targets.csv")
     while True:
         if _HAS_READLINE:
             readline.set_completer(_path_completer)
@@ -194,8 +195,17 @@ def setup():
         raw_expanded = str(Path(raw).expanduser()) if raw else raw
         if raw and Path(raw_expanded).is_file():
             try:
-                lines = Path(raw_expanded).read_text().splitlines()
-                ids = [l.strip() for l in lines if l.strip() and not l.strip().startswith("#")]
+                if raw_expanded.lower().endswith(".csv"):
+                    with open(raw_expanded, newline="") as _f:
+                        ids = [
+                            row[0].strip()
+                            for row in csv.reader(_f)
+                            if row and row[0].strip() and not row[0].strip().startswith("#")
+                            and re.match(r"^\d{9,10}$", row[0].strip())
+                        ]
+                else:
+                    lines = Path(raw_expanded).read_text().splitlines()
+                    ids = [l.strip() for l in lines if l.strip() and not l.strip().startswith("#")]
                 print(f"  [+] Loaded {len(ids)} ID(s) from {raw_expanded}")
             except OSError as e:
                 print(f"  [!] Could not read file: {e}")
