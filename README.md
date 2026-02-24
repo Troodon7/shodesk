@@ -300,14 +300,6 @@ shodesk/
 
 ---
 
-## Roadmap / TODO
-
-- [ ] **TeamViewer support** — explore TeamViewer as a monitoring target alongside AnyDesk
-- [ ] **Test on macOS** — Docker Desktop 4.29+; verify recon P2P/IP capture with host networking enabled
-- [ ] **Test on BlackArch** — Lite and Full; confirm Docker setup and `apparmor=unconfined` no-op behaviour
-
----
-
 ## Changelog
 
 See [docs/CHANGELOG.md](docs/CHANGELOG.md) for full version history.
