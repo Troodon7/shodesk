@@ -44,3 +44,11 @@
 - Recon probe uses `--network=host` on macOS for real P2P/IP capture
 - Preflight check warns if Docker Desktop host networking is disabled
 - AppArmor flags dropped on macOS (Linux-only)
+
+---
+
+## TODO
+
+- [ ] **TeamViewer support** — explore TeamViewer as a monitoring target alongside AnyDesk
+- [ ] **Test on macOS** — Docker Desktop 4.29+; verify recon P2P/IP capture with host networking enabled
+- [ ] **Test on BlackArch** — Lite and Full; confirm Docker setup and `apparmor=unconfined` no-op behaviour

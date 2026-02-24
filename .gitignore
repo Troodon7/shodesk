@@ -26,6 +26,3 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
-
-# Private notes
-TODO.md
