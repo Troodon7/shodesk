@@ -14,11 +14,13 @@
 
 **Other changes**
 - Deep scan exit prompt now prints `Skipped.` when declined
-- `--online` flag added to monitor.py — poll only, skip auto-recon on first detection
+
+**In progress**
+- nmap active scan (`ip_deep_scan.py`) — stub only, not yet implemented
 
 ---
 
-## v1.4 — ID harvester + deep IP scan *(in progress)*
+## v1.4 — ID harvester + deep IP scan
 
 **ID harvester (`harvest.py`)**
 - Discovers scammer AnyDesk IDs from public sources — Reddit (r/scambait, r/Scams, r/techsupport) and GitHub issues
@@ -36,7 +38,6 @@
 
 **Monitor improvements**
 - `--online` flag: poll online/offline status only, skip auto-recon on first detection
-- Dashboard detail column cleaned up — single-line display, raw log noise stripped
 
 ---
 
@@ -114,7 +115,7 @@
 
 - [x] **Dashboard scrolling fix** — shipped in v1.5
 - [ ] **TeamViewer support** — explore TeamViewer as a monitoring target alongside AnyDesk
-- [ ] **Deep IP scan** — Shodan passive lookup shipped; nmap active scan still a stub (NotImplementedError)
+- [ ] **Deep IP scan — nmap active scan** — Shodan passive lookup shipped (v1.4); nmap active scan still a stub
 - [ ] **Tor routing** — route probe traffic through Tor for operational anonymity
 - [ ] **Fedora/SELinux support** — swap AppArmor flags for SELinux equivalents
 - [ ] **Test on macOS** — Docker Desktop 4.29+; verify recon P2P/IP capture with host networking enabled
