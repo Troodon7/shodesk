@@ -166,6 +166,8 @@ When you stop monitoring with `Ctrl+C`, if any targets came online during the se
   Choice [P/A/N]:
 ```
 
+> **Note:** The nmap active scan (`A`) is not yet implemented — selecting it will return a `NotImplementedError`. It is on the roadmap. Shodan passive lookup (`P`) is fully functional.
+
 > **Active vs. passive warning:** Neither mode is fully passive. The public IPs were obtained by actively connecting to the target through the AnyDesk relay — a live tunnel was established to extract them. Shodan lookup (`P`) is a read-only query against Shodan's pre-existing scan database and sends no packets to the target. nmap (`A`) sends packets directly to the target's IP and is fully active. Use both with appropriate authorization.
 
 **Setting up a Shodan API key (optional):**
@@ -207,6 +209,7 @@ tail -f /home/probeuser/.anydesk/anydesk.trace    # watch live trace output
 | *(none)* | Interactive setup — prompts for targets, interval, timeout, display mode, and output path then does a deeper check on first connect for IP information |
 | `--online` | Poll online/offline status only — skips deep recon on first detection and the Shodan exit prompt |
 | `--debug ID` | Drop into a bash shell inside a probe container for the given ID (for development/inspection) |
+| `--proxy auto:N` | **[BETA / in development]** Route probes through a proxy pool — not yet fully tested or documented. Further development ongoing. |
 
 ---
 
@@ -406,7 +409,6 @@ docker build -t shodesk-probe docker/
 shodesk/
 ├── monitor.py                  # Interactive setup + probe loop
 ├── harvest.py                  # ID harvester: discovers scammer AnyDesk IDs → targets.txt
-├── requirements.txt            # pip dependencies
 ├── docker/
 │   ├── Dockerfile              # Ubuntu 22.04 + AnyDesk from official APT repo
 │   ├── probe.sh                # Container entrypoint: Xvfb → AnyDesk → trace parser → JSON

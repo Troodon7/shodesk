@@ -20,13 +20,14 @@
 
 ## v1.4 — ID harvester + deep IP scan
 
-**ID harvester (`harvest.py`)**
+**ID harvester (`harvest.py`) [BETA]**
 - Discovers scammer AnyDesk IDs from public sources — Reddit (r/scambait, r/Scams, r/techsupport) and GitHub issues
 - Outputs `targets.txt` compatible with `monitor.py`
 - Supports `--cap N`, `--out PATH`, `--sources reddit github`
 - Ctrl+C saves collected IDs and exits cleanly
 - Regex covers both 9- and 10-digit ID formats
 - Stdlib only — no new dependencies
+- Rate limiting: 2.5s pause between Reddit page requests, 7s between GitHub requests; automatic 60s backoff on HTTP 429
 
 **Deep IP scan (`recon/ip_deep_scan.py`) [BETA]**
 - Opt-in Shodan passive lookup offered at Ctrl+C exit when session IPs were discovered
