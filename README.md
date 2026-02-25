@@ -18,7 +18,7 @@ The only OSINT component is `harvest.py`, which discovers AnyDesk IDs passively 
 | BlackArch (Lite / Full) | *(untested)* | Arch-based; Docker via `pacman -S docker`; AppArmor not present but flag is safely ignored |
 | AnyDesk | 7.1.4 | Probe target; patterns may differ on other versions |
 
-## Harvestor Tested Versions
+## Harvester Tested Versions
 
 | Environment | Version | Notes |
 |-------------|---------|-------|
@@ -409,6 +409,7 @@ docker build -t shodesk-probe docker/
 shodesk/
 ├── monitor.py                  # Interactive setup + probe loop
 ├── harvest.py                  # ID harvester: discovers scammer AnyDesk IDs → targets.txt
+├── LICENSE                     # MIT License
 ├── docker/
 │   ├── Dockerfile              # Ubuntu 22.04 + AnyDesk from official APT repo
 │   ├── probe.sh                # Container entrypoint: Xvfb → AnyDesk → trace parser → JSON
@@ -438,3 +439,9 @@ See [docs/CHANGELOG.md](docs/CHANGELOG.md) for full version history.
 This tool is for authorized security research in controlled environments only. Only monitor systems you own or have explicit written permission to monitor. The authors are not responsible for misuse.
 
 **On the "OSINT" label:** Despite the `_recon.jsonl` filename and prior references to "OSINT," the core probe is **active reconnaissance**, not passive intelligence gathering. Every probe that confirms a target is online does so by establishing a live AnyDesk relay tunnel to the target device. IP addresses, fingerprints, and P2P endpoints are extracted from that active connection — not from public data sources. The Shodan lookup added in the deep scan feature is the only genuinely passive element (querying a pre-existing scan database), but it operates on IPs already obtained through active means. Use this tool accordingly.
+
+---
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.

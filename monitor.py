@@ -460,7 +460,14 @@ def main():
                         help="Drop into a bash shell inside the probe container for TARGET_ID")
     parser.add_argument("--online", action="store_true",
                         help="Poll online/offline only — skip deep recon on first detection")
-    args, _ = parser.parse_known_args()
+    parser.add_argument("--proxy", metavar="SPEC",
+                        help="[NOT YET IMPLEMENTED] Proxy routing spec (e.g. auto:3)")
+    args = parser.parse_args()
+
+    if args.proxy:
+        print("  [!] --proxy is not yet implemented.")
+        print("  [!] Exiting to prevent unintended IP exposure — do not use until proxy support is complete.")
+        sys.exit(1)
 
     if args.debug and not re.match(r"^\d{9,10}$", args.debug):
         print(f"  [!] Invalid ID '{args.debug}' — must be 9–10 digits")
