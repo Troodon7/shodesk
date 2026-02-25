@@ -29,3 +29,5 @@ Thumbs.db
 
 recon/shodan-api.txt
 recon/ip_deep_scan.py
+
+docs/deep_ip_scan_plan.md
