@@ -320,6 +320,30 @@ Docker Desktop's gVisor network stack isolates containers from the Mac's real ne
 
 Using bridge for the regular probe avoids port conflicts caused by Docker Desktop's gVisor proxy holding onto AnyDesk's ports (7070, ephemeral) between sequential container runs.
 
+### Operator IP Exposure
+
+> **Your public IP may be visible to the target when they are online.**
+
+When a target is **offline**, the relay responds immediately and no traffic ever reaches the target device — your IP is not exposed.
+
+When a target is **online**, the relay establishes a live tunnel and the recon probe initiates P2P NAT negotiation. During this phase, **your probe container's public IP can appear in the target's AnyDesk connection log** as an inbound connection attempt. On Linux with `--network=host`, this is your host machine's real public IP.
+
+**Mitigation options:**
+
+| Method | Status | Notes |
+|--------|--------|-------|
+| VPN | Untested | Should replace your public IP with the VPN exit node's IP at the relay level |
+| Double VPN | Untested | Same principle, additional hop — no reason it wouldn't work |
+| Tor | Preliminary testing | See below |
+
+**Tor — preliminary findings:**
+
+Early testing with Tor routing shows two consistent behaviours:
+- **Recon IP data does not return** — public IP and P2P endpoints come back empty when routed through Tor; SOCKS5 does not relay UDP so NAT traversal fails entirely and no network topology is captured
+- **Probe stability is inconsistent** — probes succeed at a lower rate and time out more frequently than direct connections
+
+Deeper Tor integration (tor + torsocks inside the container) is on the roadmap. See the [CHANGELOG TODO](docs/CHANGELOG.md).
+
 ---
 
 ## Troubleshooting
