@@ -116,11 +116,11 @@ class Dashboard:
             title_style="bold cyan",
             show_lines=True,
         )
-        table.add_column("Target ID", style="bold", width=14)
-        table.add_column("Status", width=10, justify="center")
-        table.add_column("Detail", width=40)
-        table.add_column("Last Online", width=20)
-        table.add_column("Last Checked", width=20)
+        table.add_column("Target ID", style="bold", width=12, no_wrap=True)
+        table.add_column("Status", width=9, justify="center", no_wrap=True)
+        table.add_column("Detail", width=40, no_wrap=True, overflow="ellipsis")
+        table.add_column("Online", width=8, no_wrap=True)
+        table.add_column("Checked", width=8, no_wrap=True)
 
         for aid in self.ids:
             s = self.state[aid]
@@ -129,11 +129,11 @@ class Dashboard:
 
             last_online = ""
             if s["last_online"]:
-                last_online = s["last_online"].strftime("%Y-%m-%d %H:%M:%S")
+                last_online = s["last_online"].strftime("%H:%M:%S")
 
             last_checked = ""
             if s["last_checked"]:
-                last_checked = s["last_checked"].strftime("%Y-%m-%d %H:%M:%S")
+                last_checked = s["last_checked"].strftime("%H:%M:%S")
 
             recon_data = s.get("recon_data")
             if recon_data:

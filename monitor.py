@@ -623,6 +623,8 @@ def main():
             if choice in ("p", "a"):
                 from recon.ip_deep_scan import deep_scan
                 deep_scan(session_ips, mode=choice, recon_dir=recon_dir, jsonl_path=recon_out)
+            else:
+                print("  Skipped.")
 
 
 if __name__ == "__main__":
