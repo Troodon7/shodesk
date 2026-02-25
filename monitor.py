@@ -458,6 +458,8 @@ def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--debug", metavar="ID",
                         help="Drop into a bash shell inside the probe container for TARGET_ID")
+    parser.add_argument("--online", action="store_true",
+                        help="Poll online/offline only — skip deep recon on first detection")
     args, _ = parser.parse_known_args()
 
     if args.debug and not re.match(r"^\d{9,10}$", args.debug):
@@ -487,9 +489,11 @@ def main():
     # Step 2: Interactive setup
     print("\n  ── Setup ──")
     config = setup()
+    config["online_only"] = args.online
 
     # Recon setup
     recon_done = set()
+    session_ips: set = set()
     recon_script = Path(__file__).parent / "docker" / "recon_probe.sh"
     csv_path = Path(config["output"]).expanduser()
     csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -500,7 +504,7 @@ def main():
     print(f"    Targets:  {', '.join(config['ids'])}")
     print(f"    Interval: {config['interval']}s")
     print(f"    Timeout:  {config['timeout']}s per probe")
-    print(f"    Mode:     {config['mode']}")
+    print(f"    Mode:     {config['mode']}{" (online-only, no recon)" if config["online_only"] else ""}")
     print(f"    CSV:      {config['output']}")
     print()
     confirm = prompt("Start monitoring? (y/n)", "y")
@@ -555,7 +559,7 @@ def main():
                 logger.log(aid, result)
 
                 # Auto-recon: run once on first online detection
-                if result.get("status") == "online" and aid not in recon_done:
+                if not config["online_only"] and result.get("status") == "online" and aid not in recon_done:
                     recon_done.add(aid)
                     recon = run_recon_probe(aid, config["image"], recon_script)
                     recon["timestamp"] = datetime.now().isoformat()
@@ -566,6 +570,8 @@ def main():
                     except OSError:
                         pass
                     ip = recon.get("public_ip", "?")
+                    if recon.get("public_ip"):
+                        session_ips.add(recon["public_ip"])
                     fpr = recon.get("fpr_short", "?")
                     candidates = recon.get("connection_candidates", [])
                     recon_lines = [
@@ -603,6 +609,20 @@ def main():
         print(f"  Results saved to: {config['output']}")
         if recon_out.exists():
             print(f"  Recon data   at: {recon_out}")
+
+        if session_ips:
+            recon_dir = Path(__file__).parent / "recon"
+            print(f"\n  Deep scan {len(session_ips)} discovered IP(s)?")
+            print("    [P] Passive — Shodan API lookup")
+            print("    [A] Active  — nmap port scan (sends packets)")
+            print("    [N] Skip")
+            try:
+                choice = input("  Choice [P/A/N]: ").strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                choice = "n"
+            if choice in ("p", "a"):
+                from recon.ip_deep_scan import deep_scan
+                deep_scan(session_ips, mode=choice, recon_dir=recon_dir, jsonl_path=recon_out)
 
 
 if __name__ == "__main__":

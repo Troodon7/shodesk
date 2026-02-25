@@ -1,8 +1,10 @@
 # Shodesk
 
-Track online/offline status of AnyDesk IDs using disposable Docker containers as probes. Each probe gets a fresh AnyDesk identity, queries one target through the AnyDesk relay network, and self-destructs — leaving no persistent footprint on your machine or the target.
+Active reconnaissance tool for AnyDesk IDs. Probes targets through the AnyDesk relay network using disposable Docker containers — each probe gets a fresh ephemeral identity, makes one connection attempt, and self-destructs.
 
-When a target is confirmed online, the tool automatically runs a deeper recon probe to extract the target's public IP, device fingerprint, relay assignment, and all advertised LAN/VPN endpoints.
+**This is active recon, not OSINT.** Confirming a target is online requires establishing a live relay tunnel to their device. When a target is first seen online, a deeper probe extracts their public IP, device fingerprint, relay assignment, and all advertised LAN/VPN endpoints from that live connection.
+
+The only OSINT component is `harvest.py`, which discovers AnyDesk IDs passively from public scam reports on Reddit and GitHub — before any probing begins.
 
 **Platform:** Linux, macOS (Docker Desktop 4.29+)
 
@@ -63,6 +65,31 @@ docker build -t shodesk-probe docker/
 
 ## Usage
 
+### Harvester — discover scammer IDs (optional first step)
+
+```bash
+python3 harvest.py
+```
+
+Searches Reddit scam communities (r/scambait, r/Scams, r/techsupport) and GitHub issues for publicly posted AnyDesk IDs associated with scam reports. Results are written to `~/targets.txt` ready for `monitor.py` to consume.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--cap N` | 100 | Stop after N unique IDs |
+| `--out PATH` | `~/targets.txt` | Output file |
+| `--sources reddit github` | both | Limit to specific sources |
+
+```bash
+python3 harvest.py --cap 200 --sources reddit     # Reddit only, up to 200 IDs
+python3 harvest.py --out ~/scammer_ids.txt         # custom output path
+```
+
+**Ctrl+C** at any point saves whatever has been collected so far and exits cleanly.
+
+> **Note:** This pulls from public posts where victims or scambaiters have documented scammer IDs. IDs are not verified — some may be stale or reassigned. The monitor will quickly establish which are currently online.
+
+---
+
 ### Monitor — online/offline polling
 
 ```bash
@@ -96,11 +123,11 @@ You will be prompted for:
 
 **Output files** (in `~/shodesk-logs/`):
 - `shodesk_YYYYMMDD_HHMMSS.csv` — timestamped poll results (all cycles)
-- `shodesk_YYYYMMDD_HHMMSS_recon.jsonl` — OSINT data extracted on first online detection per session
+- `shodesk_YYYYMMDD_HHMMSS_recon.jsonl` — recon data extracted on first online detection per session
 
 ### Recon scanner — on-demand deep probe
 
-Run a deep OSINT probe on one or more IDs without starting the full monitor:
+Run a deep recon probe on one or more IDs without starting the full monitor:
 
 ```bash
 python3 recon/ip_scan.py 123456789
@@ -120,6 +147,36 @@ python3 recon/ip_scan.py 123456789,987654321
 
 Results saved to `~/shodesk-logs/recon_YYYYMMDD_HHMMSS.json`.
 
+### Deep IP Scan — Shodan lookup at exit (opt-in)
+
+When you stop monitoring with `Ctrl+C`, if any targets came online during the session, you will be prompted:
+
+```
+  Deep scan 2 discovered IP(s)?
+    [P] Passive — Shodan API lookup
+    [A] Active  — nmap port scan (sends packets)
+    [N] Skip
+  Choice [P/A/N]:
+```
+
+> **Active vs. passive warning:** Neither mode is fully passive. The public IPs were obtained by actively connecting to the target through the AnyDesk relay — a live tunnel was established to extract them. Shodan lookup (`P`) is a read-only query against Shodan's pre-existing scan database and sends no packets to the target. nmap (`A`) sends packets directly to the target's IP and is fully active. Use both with appropriate authorization.
+
+**Setting up a Shodan API key (optional):**
+
+Create `recon/shodan-api.txt` with your key on a single line:
+```bash
+cp recon/shodan-api.txt.example recon/shodan-api.txt
+# Edit the file and replace YOUR_KEY_HERE with your actual key
+```
+
+If the file is absent or empty, the tool will prompt for a key at runtime. Get a free key at [account.shodan.io](https://account.shodan.io).
+
+> `recon/shodan-api.txt` is in `.gitignore` and will never be committed.
+
+**Output:** Results are printed as a table and appended to the session `_recon.jsonl` file as records with `"type": "deep_scan"`.
+
+---
+
 ### Debug shell — inspect a probe container manually
 
 ```bash
@@ -133,6 +190,16 @@ Drops into a bash shell inside a running probe container. Useful for inspecting 
 bash /probe.sh                                     # run the probe manually
 tail -f /home/probeuser/.anydesk/anydesk.trace    # watch live trace output
 ```
+
+---
+
+### monitor.py flags
+
+| Flag | Description |
+|------|-------------|
+| *(none)* | Interactive setup — prompts for targets, interval, timeout, display mode, and output path |
+| `--online` | Poll online/offline status only — skips deep recon on first detection and the Shodan exit prompt |
+| `--debug ID` | Drop into a bash shell inside a probe container for the given ID (for development/inspection) |
 
 ---
 
@@ -160,6 +227,16 @@ tail -f /home/probeuser/.anydesk/anydesk.trace    # watch live trace output
 | `fpr_full` | Full device fingerprint hash (40 hex chars, stable across reboots) |
 | `connection_candidates` | All P2P endpoints advertised by target (LAN IPs, VPN ranges, public IP) |
 | `timestamp` | ISO 8601 timestamp of the recon probe |
+
+**Deep scan records** (appended at exit, `"type": "deep_scan"`):
+
+| Field | Description |
+|-------|-------------|
+| `type` | Always `"deep_scan"` |
+| `ip` | The scanned public IP |
+| `mode` | `"passive"` (Shodan) or `"active"` (nmap) |
+| `timestamp` | ISO 8601 timestamp of the scan |
+| `data` | Full Shodan host object, or `{"error": "..."}` on failure |
 
 ---
 
@@ -283,6 +360,7 @@ docker build -t shodesk-probe docker/
 ```
 shodesk/
 ├── monitor.py                  # Interactive setup + probe loop
+├── harvest.py                  # ID harvester: discovers scammer AnyDesk IDs → targets.txt
 ├── requirements.txt            # pip dependencies
 ├── docker/
 │   ├── Dockerfile              # Ubuntu 22.04 + AnyDesk from official APT repo
@@ -292,7 +370,9 @@ shodesk/
 │   ├── dashboard.py            # Rich Live table display
 │   └── logger.py               # CSV logger + log-mode line printer
 ├── recon/
-│   └── ip_scan.py              # Standalone OSINT scanner (on-demand recon)
+│   ├── ip_scan.py              # Standalone recon scanner (on-demand deep probe)
+│   ├── ip_deep_scan.py         # Deep IP scan: Shodan lookup + nmap stub (opt-in at exit)
+│   └── shodan-api.txt.example  # API key placeholder (copy to shodan-api.txt, never committed)
 ├── docs/
 │   └── CHANGELOG.md            # Version history
 └── reference_material/         # Local only — not committed to repo
@@ -308,4 +388,6 @@ See [docs/CHANGELOG.md](docs/CHANGELOG.md) for full version history.
 
 ## Legal
 
-This tool is for authorized security research and OSINT in controlled environments only. Only monitor systems you own or have explicit written permission to monitor. The authors are not responsible for misuse.
+This tool is for authorized security research in controlled environments only. Only monitor systems you own or have explicit written permission to monitor. The authors are not responsible for misuse.
+
+**On the "OSINT" label:** Despite the `_recon.jsonl` filename and prior references to "OSINT," the core probe is **active reconnaissance**, not passive intelligence gathering. Every probe that confirms a target is online does so by establishing a live AnyDesk relay tunnel to the target device. IP addresses, fingerprints, and P2P endpoints are extracted from that active connection — not from public data sources. The Shodan lookup added in the deep scan feature is the only genuinely passive element (querying a pre-existing scan database), but it operates on IPs already obtained through active means. Use this tool accordingly.
