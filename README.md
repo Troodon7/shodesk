@@ -2,13 +2,13 @@
 
 Active reconnaissance tool for AnyDesk IDs. Probes targets through the AnyDesk relay network using disposable Docker containers — each probe gets a fresh ephemeral identity, makes one connection attempt, and self-destructs.
 
-**This is active recon, not OSINT.** Confirming a target is online requires establishing a live relay tunnel to their device. When a target is first seen online, a deeper probe extracts their public IP, device fingerprint, relay assignment, and all advertised LAN/VPN endpoints from that live connection.
+**This is active recon, with a targeted OSINT tool as an option.** Confirming a target is online requires establishing a live relay tunnel to their device. When a target is first seen online, a deeper probe extracts their public IP, device fingerprint, relay assignment, and all advertised LAN/VPN endpoints from that live connection.
 
-The only OSINT component is `harvest.py`, which discovers AnyDesk IDs passively from public scam reports on Reddit and GitHub — before any probing begins.
+The only OSINT component is `harvest.py`, which discovers AnyDesk IDs passively from public scam reports on Reddit and GitHub — you can do this before any probing begins to get a list for testing but that is risky given the nature of the discovery, use at your own risk.
 
 **Platform:** Linux, macOS (Docker Desktop 4.29+)
 
-## Tested Versions
+## Monitor Tested Versions
 
 | Environment | Version | Notes |
 |-------------|---------|-------|
@@ -18,6 +18,11 @@ The only OSINT component is `harvest.py`, which discovers AnyDesk IDs passively 
 | BlackArch (Lite / Full) | *(untested)* | Arch-based; Docker via `pacman -S docker`; AppArmor not present but flag is safely ignored |
 | AnyDesk | 7.1.4 | Probe target; patterns may differ on other versions |
 
+## Harvestor
+
+| Environment | Version | Notes |
+|-------------|---------|-------|
+| Parrot Security (Linux) | 7.1 "echo" | Podman rootless; primary dev/test environment |
 ---
 
 ## Installation
