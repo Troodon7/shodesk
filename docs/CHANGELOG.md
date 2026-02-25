@@ -21,6 +21,10 @@
 - `ip_scan.py` recon output: `~/shodesk-logs/recon_YYYYMMDD_HHMMSS.json`
 - Directory created automatically on first run
 
+**Post-release fixes**
+- `monitor.py`: guard all `print()` calls during Rich Live display — raw stdout while Live is active corrupts the terminal renderer
+- `probe.sh`: strip `\r` from probe detail before JSON encoding to prevent cursor-reset in log mode
+
 ---
 
 ## v1.2 — Vendored dependencies; no pip required
@@ -71,5 +75,8 @@
 ## TODO
 
 - [ ] **TeamViewer support** — explore TeamViewer as a monitoring target alongside AnyDesk
+- [ ] **Deep IP scan** — Shodan API + optional nmap scan of IPs discovered during recon, offered at Ctrl+C exit
+- [ ] **Tor routing** — route probe traffic through Tor for operational anonymity
+- [ ] **Fedora/SELinux support** — swap AppArmor flags for SELinux equivalents
 - [ ] **Test on macOS** — Docker Desktop 4.29+; verify recon P2P/IP capture with host networking enabled
 - [ ] **Test on BlackArch** — Lite and Full; confirm Docker setup and `apparmor=unconfined` no-op behaviour
