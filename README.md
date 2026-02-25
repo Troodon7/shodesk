@@ -211,7 +211,7 @@ tail -f /home/probeuser/.anydesk/anydesk.trace    # watch live trace output
 |--------|-------------|
 | `timestamp` | ISO 8601 timestamp of the probe |
 | `target_id` | Target AnyDesk ID |
-| `status` | `online`, `offline`, `unknown`, or `error` |
+| `status` | `online` — relay confirmed target is reachable; `offline` — relay confirmed unreachable; `unknown` — no relay response before timeout (ID likely stale or unregistered); `error` — AnyDesk failed to initialize |
 | `remote_os` | Target OS (blank in 7.x standalone mode) |
 | `remote_version` | Target AnyDesk version (blank in 7.x standalone mode) |
 | `detail` | Raw log line that triggered the result |
@@ -261,6 +261,20 @@ The relay responds within ~1-2 seconds of the connection request:
 |--------|---------------------|
 | **Online** | `anynet.any_socket - Connect request accepted, tunnel route created.` |
 | **Offline** | `anynet.any_socket - Client appears to be offline.` |
+| **Unknown** | No matching pattern before timeout — see below |
+| **Error** | AnyDesk failed to initialize (no trace log produced) |
+
+#### Understanding Unknown
+
+`unknown` means the probe timed out without receiving a definitive relay response. The AnyDesk client initialized successfully (license sync, relay registration), but the relay never confirmed the target ID's status within the timeout window.
+
+Common causes:
+- **ID doesn't exist or was never registered** — the relay has no record of it and simply doesn't respond
+- **Stale ID** — the ID existed but the AnyDesk install behind it is gone; the relay eventually drops it but may not respond immediately
+- **Relay congestion** — occasional slow relay response; the same ID may resolve cleanly on the next cycle
+- **ID in a transitional state** — device is mid-boot or AnyDesk is restarting
+
+A persistent stream of `unknown` results for an ID (across multiple cycles) almost always means the ID is dead. IDs harvested from public scam reports go stale quickly — the detail column will show `No pattern (Ns)` to indicate how long the probe waited.
 
 ### Auto-Recon on First Online Detection
 

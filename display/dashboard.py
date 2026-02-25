@@ -45,6 +45,24 @@ class Dashboard:
         """Store recon data dict for colored rendering in the detail pane."""
         self.state[aid]["recon_data"] = recon
 
+    def _clean_detail(self, status, detail):
+        """Reduce raw probe detail to a single readable line for display."""
+        if not detail:
+            return ""
+        if status == "unknown":
+            # "No pattern (10s). Log: ..." — drop the log dump entirely
+            if detail.startswith("No pattern"):
+                idx = detail.find(".")
+                return detail[:idx] if idx != -1 else detail[:30]
+            return detail[:50]
+        if status in ("offline", "online", "error"):
+            # AnyDesk log lines: "info TIMESTAMP ... module - Message."
+            # Extract just the message after the last " - "
+            if " - " in detail:
+                clean = detail.rsplit(" - ", 1)[-1].strip().rstrip("|").strip()
+                return clean[:60] if len(clean) > 60 else clean
+        return detail[:60] if len(detail) > 60 else detail
+
     def _recon_text(self, recon_data):
         """Build a colored Rich Text block from recon data dict."""
         t = Text()
@@ -123,7 +141,7 @@ class Dashboard:
                 cell_detail.append("\n" + "─" * 30 + "\n")
                 cell_detail.append(s["detail"])
             else:
-                cell_detail = s["detail"]
+                cell_detail = self._clean_detail(s["status"], s["detail"])
 
             table.add_row(
                 aid,
