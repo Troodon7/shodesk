@@ -74,8 +74,9 @@
 
 ## TODO
 
+- [ ] **Dashboard scrolling fix** — dashboard re-renders instead of updating in place when target list grows; under active investigation (beta testing)
 - [ ] **TeamViewer support** — explore TeamViewer as a monitoring target alongside AnyDesk
-- [ ] **Deep IP scan** — Shodan API + optional nmap scan of IPs discovered during recon, offered at Ctrl+C exit
+- [ ] **Deep IP scan** — Shodan passive lookup shipped; nmap active scan still a stub (NotImplementedError)
 - [ ] **Tor routing** — route probe traffic through Tor for operational anonymity
 - [ ] **Fedora/SELinux support** — swap AppArmor flags for SELinux equivalents
 - [ ] **Test on macOS** — Docker Desktop 4.29+; verify recon P2P/IP capture with host networking enabled
