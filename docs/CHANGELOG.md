@@ -2,6 +2,22 @@
 
 ---
 
+## v1.5 — Dashboard overhaul
+
+**Dashboard scrolling fix (key change)**
+- Fixed dashboard re-rendering instead of updating in place with large target lists
+- Root cause: fixed column widths summed to ~114 chars, exceeding terminal width and breaking Rich Live's cursor-up line count — causing it to append instead of overwrite
+- All columns now use `no_wrap=True` to guarantee single-line rows regardless of content
+- Compact column layout (12/9/40/8/8) fits comfortably in any 80+ char terminal
+- Timestamps shortened to `HH:MM:SS`; column headers shortened to fit without clipping
+- Detail column cleaned up — raw AnyDesk log noise stripped, single meaningful phrase shown
+
+**Other changes**
+- Deep scan exit prompt now prints `Skipped.` when declined
+- `--online` flag added to monitor.py — poll only, skip auto-recon on first detection
+
+---
+
 ## v1.4 — ID harvester + deep IP scan *(in progress)*
 
 **ID harvester (`harvest.py`)**
@@ -96,7 +112,7 @@
 
 ## TODO
 
-- [ ] **Dashboard scrolling fix** — dashboard re-renders instead of updating in place when target list grows; under active investigation (beta testing) — will ship as part of v1.4
+- [x] **Dashboard scrolling fix** — shipped in v1.5
 - [ ] **TeamViewer support** — explore TeamViewer as a monitoring target alongside AnyDesk
 - [ ] **Deep IP scan** — Shodan passive lookup shipped; nmap active scan still a stub (NotImplementedError)
 - [ ] **Tor routing** — route probe traffic through Tor for operational anonymity
