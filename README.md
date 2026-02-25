@@ -12,7 +12,7 @@ When a target is confirmed online, the tool automatically runs a deeper recon pr
 |-------------|---------|-------|
 | Parrot Security (Linux) | 7.1 "echo" | Podman rootless; primary dev/test environment |
 | Ubuntu 22.04 LTS (Linux) | 22.04 | Docker; also used as container base image |
-| macOS | *(tested — unrecorded version)* | Docker Desktop 4.29+ required |
+| macOS | *(Apple silicon 26.3)* | Docker Desktop 4.29+ required |
 | BlackArch (Lite / Full) | *(untested)* | Arch-based; Docker via `pacman -S docker`; AppArmor not present but flag is safely ignored |
 | AnyDesk | 7.1.4 | Probe target; patterns may differ on other versions |
 
