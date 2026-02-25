@@ -15,8 +15,6 @@
 **Other changes**
 - Deep scan exit prompt now prints `Skipped.` when declined
 
-**In progress**
-- nmap active scan (`ip_deep_scan.py`) — stub only, not yet implemented
 
 ---
 
