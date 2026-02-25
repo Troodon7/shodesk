@@ -2,6 +2,28 @@
 
 ---
 
+## v1.4 — ID harvester + deep IP scan *(in progress)*
+
+**ID harvester (`harvest.py`)**
+- Discovers scammer AnyDesk IDs from public sources — Reddit (r/scambait, r/Scams, r/techsupport) and GitHub issues
+- Outputs `targets.txt` compatible with `monitor.py`
+- Supports `--cap N`, `--out PATH`, `--sources reddit github`
+- Ctrl+C saves collected IDs and exits cleanly
+- Regex covers both 9- and 10-digit ID formats
+- Stdlib only — no new dependencies
+
+**Deep IP scan (`recon/ip_deep_scan.py`) [BETA]**
+- Opt-in Shodan passive lookup offered at Ctrl+C exit when session IPs were discovered
+- Results appended to session `_recon.jsonl` as `type=deep_scan` records
+- Prints Rich table (IP=green, ports=cyan) with plain-text fallback
+- nmap active scan: stub only (`NotImplementedError`) — not yet implemented
+
+**Monitor improvements**
+- `--online` flag: poll online/offline status only, skip auto-recon on first detection
+- Dashboard detail column cleaned up — single-line display, raw log noise stripped
+
+---
+
 ## v1.3 — Security hardening + session log files
 
 **Security fixes**
@@ -74,7 +96,7 @@
 
 ## TODO
 
-- [ ] **Dashboard scrolling fix** — dashboard re-renders instead of updating in place when target list grows; under active investigation (beta testing)
+- [ ] **Dashboard scrolling fix** — dashboard re-renders instead of updating in place when target list grows; under active investigation (beta testing) — will ship as part of v1.4
 - [ ] **TeamViewer support** — explore TeamViewer as a monitoring target alongside AnyDesk
 - [ ] **Deep IP scan** — Shodan passive lookup shipped; nmap active scan still a stub (NotImplementedError)
 - [ ] **Tor routing** — route probe traffic through Tor for operational anonymity
