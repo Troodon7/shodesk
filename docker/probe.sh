@@ -29,7 +29,7 @@ json_result() {
     detail="${detail//\\/\\\\}"
     detail="${detail//\"/\\\"}"
     detail="${detail//$'\n'/\\n}"
-    detail="${detail//$'\r'/\\r}"
+    detail="${detail//$'\r'/}"
     detail="${detail//$'\t'/\\t}"
     echo "{\"id\":\"${TARGET_ID}\",\"status\":\"${status}\",\"detail\":\"${detail}\",\"elapsed_ms\":${elapsed}}"
 }

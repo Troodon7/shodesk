@@ -11,6 +11,7 @@
 - `probe.sh`: escape newlines, carriage returns, and tabs in JSON output
 - Output files now created with permissions 600 (no longer world-readable)
 - Fixed timeout error message: reported +20s, actual was +40s
+- `probe.sh`: strip carriage returns (`\r`) from detail before JSON encoding — the `\r`→`\n`/`\t` escaping added in this release correctly produced valid JSON, but JSON `\r` round-trips back to an actual CR (0x0D) in Python, which moves the terminal cursor to column 0 and garbles log-mode output; stripping `\r` is safe since it only appears as CRLF line-ending noise in the AnyDesk trace log
 
 **Session log files**
 - Each run creates new timestamped files — no more appending to a single growing CSV

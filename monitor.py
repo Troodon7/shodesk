@@ -561,11 +561,10 @@ def main():
                     recon["timestamp"] = datetime.now().isoformat()
                     with open(recon_out, "a") as rf:
                         rf.write(json.dumps(recon) + "\n")
-                    if recon_out.stat().st_size <= len(json.dumps(recon)) + 2:
-                        try:
-                            os.chmod(recon_out, 0o600)
-                        except OSError:
-                            pass
+                    try:
+                        os.chmod(recon_out, 0o600)
+                    except OSError:
+                        pass
                     ip = recon.get("public_ip", "?")
                     fpr = recon.get("fpr_short", "?")
                     candidates = recon.get("connection_candidates", [])
@@ -580,11 +579,6 @@ def main():
                     else:
                         for line in recon_lines:
                             print(line)
-                    if log_lines := recon.get("log_lines"):
-                        print("  [RECON DEBUG] Trace log lines (patterns didn't match):")
-                        for ll in log_lines.split("\\n"):
-                            if ll.strip():
-                                print(f"    {ll}")
 
                 if display:
                     display.update(aid, result)
