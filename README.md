@@ -18,7 +18,7 @@ The only OSINT component is `harvest.py`, which discovers AnyDesk IDs passively 
 | BlackArch (Lite / Full) | *(untested)* | Arch-based; Docker via `pacman -S docker`; AppArmor not present but flag is safely ignored |
 | AnyDesk | 7.1.4 | Probe target; patterns may differ on other versions |
 
-## Harvestor
+## Harvestor Tested Versions
 
 | Environment | Version | Notes |
 |-------------|---------|-------|
@@ -61,7 +61,9 @@ sudo usermod -aG docker $USER && newgrp docker
 
 ### 4. Build the probe image (first run only, ~3 minutes)
 
-The monitor builds it automatically on first run. To build manually:
+**The monitor builds it automatically on first run.**
+
+To build manually:
 ```bash
 docker build -t shodesk-probe docker/
 ```
@@ -101,7 +103,7 @@ python3 harvest.py --out ~/scammer_ids.txt         # custom output path
 python3 monitor.py
 ```
 
-You will be prompted for:
+You will be prompted for the following, note the default setup are known good:
 
 | Prompt | Description | Default |
 |--------|-------------|---------|
@@ -202,7 +204,7 @@ tail -f /home/probeuser/.anydesk/anydesk.trace    # watch live trace output
 
 | Flag | Description |
 |------|-------------|
-| *(none)* | Interactive setup — prompts for targets, interval, timeout, display mode, and output path |
+| *(none)* | Interactive setup — prompts for targets, interval, timeout, display mode, and output path then does a deeper check on first connect for IP information |
 | `--online` | Poll online/offline status only — skips deep recon on first detection and the Shodan exit prompt |
 | `--debug ID` | Drop into a bash shell inside a probe container for the given ID (for development/inspection) |
 
